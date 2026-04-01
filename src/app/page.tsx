@@ -236,9 +236,11 @@ const IGNITION_PRIZE_PHOTOS: Record<string, string> = {
 // HELPERS
 // ─────────────────────────────────────────────
 
+function parseLocal(s: string): Date { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); }
+
 function getStatus(comp: Comp, now: Date): "live" | "upcoming" | "done" {
-  const s = new Date(comp.dates.start);
-  const e = new Date(comp.dates.end);
+  const s = parseLocal(comp.dates.start);
+  const e = parseLocal(comp.dates.end);
   if (now >= s && now <= e) return "live";
   if (now < s) return "upcoming";
   return "done";
@@ -246,7 +248,7 @@ function getStatus(comp: Comp, now: Date): "live" | "upcoming" | "done" {
 
 function fmtRange(start: string, end: string): string {
   const o: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  return `${new Date(start).toLocaleDateString("en-US", o)} – ${new Date(end).toLocaleDateString("en-US", o)}`;
+  return `${parseLocal(start).toLocaleDateString("en-US", o)} – ${parseLocal(end).toLocaleDateString("en-US", o)}`;
 }
 
 function statusBadge(comp: Comp, now: Date): { label: string; style: React.CSSProperties } {
