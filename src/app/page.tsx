@@ -884,52 +884,58 @@ function MobileLayout({ now }: { now: Date }) {
 
 export default function Page() {
   const [now] = useState(() => new Date());
-  const [isDesktop, setIsDesktop] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsDesktop(mq.matches);
-    setMounted(true);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  // Avoid layout flash on SSR
-  if (!mounted) {
-    return (
-      <div style={{ minHeight:"100vh", background:"#e8e8e0", display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <div style={{ fontSize:14, color:"#aaa" }}>Loading…</div>
-      </div>
-    );
-  }
-
-  return isDesktop ? (
+  return (
     <>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 99px; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-      `}</style>
-      <DesktopLayout now={now} />
-    </>
-  ) : (
-    <>
-      <style>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #e8e8e0; min-height: 100dvh; display: flex; align-items: flex-start; justify-content: center; }
-        @media (min-width: 480px) {
-          body { padding: 32px 16px; align-items: center; }
-          #mobile-shell { min-height: 820px !important; max-height: 820px !important; border-radius: 44px !important; box-shadow: 0 24px 80px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12) !important; overflow: hidden !important; }
+
+        /* Desktop layout: ≥768px */
+        #layout-desktop { display: none; }
+        #layout-mobile  { display: flex; }
+
+        @media (min-width: 768px) {
+          #layout-desktop { display: block; }
+          #layout-mobile  { display: none; }
+          body { background: #e8e8e0; }
+          ::-webkit-scrollbar { width: 4px; }
+          ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 99px; }
         }
+
+        /* Mobile: phone-shell styles */
+        @media (max-width: 767px) {
+          body { background: #e8e8e0; min-height: 100dvh; align-items: flex-start; justify-content: center; }
+          ::-webkit-scrollbar { width: 3px; }
+          ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
+        }
+
+        /* Phone shell on mid-size (480–767px) */
+        @media (min-width: 480px) and (max-width: 767px) {
+          body { padding: 32px 16px; align-items: center; }
+          #mobile-shell {
+            min-height: 820px !important;
+            max-height: 820px !important;
+            border-radius: 44px !important;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12) !important;
+            overflow: hidden !important;
+          }
+        }
+
+        ::-webkit-scrollbar-track { background: transparent; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
-      <div id="mobile-shell">
-        <MobileLayout now={now} />
+
+      {/* Desktop — always mounted, CSS-toggled */}
+      <div id="layout-desktop">
+        <DesktopLayout now={now} />
+      </div>
+
+      {/* Mobile — always mounted, CSS-toggled */}
+      <div id="layout-mobile" style={{ width:"100%", justifyContent:"center" }}>
+        <div id="mobile-shell" style={{ width:"100%", maxWidth:390, minHeight:"100dvh", display:"flex", flexDirection:"column" }}>
+          <MobileLayout now={now} />
+        </div>
       </div>
     </>
   );
