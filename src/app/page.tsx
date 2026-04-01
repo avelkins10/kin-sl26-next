@@ -37,7 +37,7 @@ interface Comp {
 }
 
 type MobileScreen = "home" | "detail" | "content" | "soon";
-type SectionKey = "rules" | "metrics" | "incentives" | "standings";
+type SectionKey = "rules" | "incentives" | "standings";
 
 // ─────────────────────────────────────────────
 // COMPETITION DATA
@@ -219,10 +219,9 @@ const GROUPS: { key: Comp["group"]; label: string }[] = [
 ];
 
 const SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: "rules",      label: "Rules" },
-  { key: "metrics",    label: "Metrics" },
-  { key: "incentives", label: "Incentives" },
   { key: "standings",  label: "Standings" },
+  { key: "incentives", label: "Incentives" },
+  { key: "rules",      label: "Rules" },
 ];
 
 const IGNITION_PRIZE_PHOTOS: Record<string, string> = {
@@ -389,7 +388,7 @@ function IgnitionStandingsContent() {
 }
 
 function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) {
-  // Rules
+  // Rules (merged with Metrics)
   if (section === "rules") {
     if (comp.id === "ignition") return (
       <>
@@ -400,6 +399,30 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
         <p>KCAs counted from QuickBase using sale date within each round window. Round closes midnight Sunday.</p>
         <p><strong>Prize Distribution:</strong> Ships to your office at end of each round. Allow 2 weeks.</p>
         <p><strong>Eligibility:</strong> Active reps only. Cancelled/Deactivated accounts are ineligible.</p>
+        {/* Round targets — merged from Metrics */}
+        {comp.rounds && (
+          <>
+            <h3 style={{ marginTop: 16 }}>KCA Targets by Round</h3>
+            <p>Hit your role&apos;s weekly target to win. Every qualifying rep wins — no cap.</p>
+            {comp.rounds.map(r => (
+              <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                  <div><div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div><div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div></div>
+                  <div style={{ fontSize:11, fontWeight:700, background:"rgba(255,255,255,0.2)", padding:"3px 10px", borderRadius:20 }}>{r.prize}</div>
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  {Object.entries(r.targets!).map(([role,n])=>(
+                    <div key={role} style={{ flex:1, textAlign:"center", background:"rgba(255,255,255,0.1)", borderRadius:8, padding:"8px 4px" }}>
+                      <div style={{ fontSize:22, fontWeight:900 }}>{n}</div>
+                      <div style={{ fontSize:10, opacity:0.7, marginTop:1 }}>{role}</div>
+                      <div style={{ fontSize:10, opacity:0.5 }}>KCA</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </>
     );
     if (comp.id === "blood-club") return (
@@ -408,39 +431,8 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
         <p>The ultimate closer challenge — running all year. Close <strong>2 deals on the same Saturday</strong> to earn membership.</p>
         <ul><li>Both closes must share the same sale date in QuickBase</li><li>That date must fall on a Saturday</li><li>Both deals must reach KCA status</li><li>Achievement is permanent — once you&apos;re in, you&apos;re in</li></ul>
         <p>Rookies only need 1 same-day Saturday close to qualify.</p>
-      </>
-    );
-    return <p style={{ opacity: 0.8 }}>Rules coming soon.</p>;
-  }
-
-  // Metrics
-  if (section === "metrics") {
-    if (comp.id === "ignition" && comp.rounds) return (
-      <>
-        <h3>KCA Targets by Round</h3>
-        <p>Hit your role&apos;s weekly target to win. Every qualifying rep wins — no cap.</p>
-        {comp.rounds.map(r => (
-          <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
-              <div><div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div><div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div></div>
-              <div style={{ fontSize:11, fontWeight:700, background:"rgba(255,255,255,0.2)", padding:"3px 10px", borderRadius:20 }}>{r.prize}</div>
-            </div>
-            <div style={{ display:"flex", gap:8 }}>
-              {Object.entries(r.targets!).map(([role,n])=>(
-                <div key={role} style={{ flex:1, textAlign:"center", background:"rgba(255,255,255,0.1)", borderRadius:8, padding:"8px 4px" }}>
-                  <div style={{ fontSize:22, fontWeight:900 }}>{n}</div>
-                  <div style={{ fontSize:10, opacity:0.7, marginTop:1 }}>{role}</div>
-                  <div style={{ fontSize:10, opacity:0.5 }}>KCA</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </>
-    );
-    if (comp.id === "blood-club") return (
-      <>
-        <h3>The Qualifying Standard</h3>
+        {/* Qualifying standard — merged from Metrics */}
+        <h3 style={{ marginTop: 16 }}>The Qualifying Standard</h3>
         <div style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
             <div><div style={{ fontSize:14, fontWeight:700 }}>2 Closes</div><div style={{ fontSize:12, opacity:0.7 }}>Same Saturday</div></div>
@@ -459,7 +451,7 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
         <p>Both deals must reach KCA status. Saturdays only.</p>
       </>
     );
-    return <p style={{ opacity:0.8 }}>Metrics coming soon.</p>;
+    return <p style={{ opacity: 0.8 }}>Rules coming soon.</p>;
   }
 
   // Incentives
@@ -525,11 +517,11 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
 // ─────────────────────────────────────────────
 
 function DesktopDetailPanel({ comp, now }: { comp: Comp; now: Date }) {
-  const [activeSection, setActiveSection] = useState<SectionKey>("rules");
+  const [activeSection, setActiveSection] = useState<SectionKey>("standings");
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setActiveSection("rules");
+    setActiveSection("standings");
     if (contentRef.current) contentRef.current.scrollTop = 0;
   }, [comp.id]);
 
