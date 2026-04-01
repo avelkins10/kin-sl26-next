@@ -28,6 +28,10 @@ interface Comp {
   id: string;
   name: string;
   emoji: string;
+  logo?: string;
+  accent?: string;
+  accentSoft?: string;
+  btnTextColor?: string;
   group: "monthly" | "summer" | "yearlong";
   tag: string;
   tagClass: string;
@@ -75,6 +79,10 @@ const COMPS: Comp[] = [
     id: "ignition",
     name: "Ignition",
     emoji: "🔥",
+    logo: "ignition-logo.png",
+    accent: "#f97316",
+    accentSoft: "rgba(249,115,22,0.12)",
+    btnTextColor: "#fff",
     group: "monthly",
     tag: "Preseason",
     tagClass: "tag-preseason",
@@ -95,6 +103,10 @@ const COMPS: Comp[] = [
     id: "wars",
     name: "Wars",
     emoji: "⚔️",
+    logo: "wars-logo.png",
+    accent: "#ef4444",
+    accentSoft: "rgba(239,68,68,0.12)",
+    btnTextColor: "#fff",
     group: "monthly",
     tag: "Monthly",
     tagClass: "tag-monthly",
@@ -117,6 +129,10 @@ const COMPS: Comp[] = [
     id: "the-drop",
     name: "The Drop",
     emoji: "📦",
+    logo: "the-drop-logo.png",
+    accent: "#8b5cf6",
+    accentSoft: "rgba(139,92,246,0.12)",
+    btnTextColor: "#fff",
     group: "monthly",
     tag: "Monthly",
     tagClass: "tag-monthly",
@@ -157,6 +173,10 @@ const COMPS: Comp[] = [
     id: "supercrown",
     name: "Supercrown",
     emoji: "👑",
+    logo: "supercrown-logo.png",
+    accent: "#eab308",
+    accentSoft: "rgba(234,179,8,0.12)",
+    btnTextColor: "#000",
     group: "monthly",
     tag: "Monthly",
     tagClass: "tag-monthly",
@@ -180,6 +200,10 @@ const COMPS: Comp[] = [
     id: "the-throne",
     name: "The Throne",
     emoji: "🪑",
+    logo: "the-throne-logo.png",
+    accent: "#a855f7",
+    accentSoft: "rgba(168,85,247,0.12)",
+    btnTextColor: "#fff",
     group: "monthly",
     tag: "Monthly",
     tagClass: "tag-monthly",
@@ -247,6 +271,10 @@ const COMPS: Comp[] = [
     id: "blood-club",
     name: "The Blood Club",
     emoji: "🩸",
+    logo: "blood-club-logo.png",
+    accent: "#ef4444",
+    accentSoft: "rgba(239,68,68,0.12)",
+    btnTextColor: "#fff",
     group: "yearlong",
     tag: "Year Long",
     tagClass: "tag-yearlong",
@@ -462,7 +490,22 @@ function DetailPanel({ comp, now }: { comp: Comp; now: Date }) {
       <div className="card p-6 mb-4">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-4">
-            <div className="text-4xl">{comp.emoji}</div>
+            <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
+              {comp.logo ? (
+                <img
+                  src={`/${comp.logo}`}
+                  alt={comp.name}
+                  className="w-14 h-14 object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.style.display = "none";
+                    const fallback = target.nextElementSibling as HTMLElement | null;
+                    if (fallback) fallback.style.display = "block";
+                  }}
+                />
+              ) : null}
+              <span className="text-4xl" style={{ display: comp.logo ? "none" : "block" }}>{comp.emoji}</span>
+            </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-2xl font-black text-white">{comp.name}</h2>
@@ -797,23 +840,60 @@ function OverviewTab({ comp }: { comp: Comp }) {
   return <div className="text-sm text-gray-400">{comp.format}</div>;
 }
 
+const IGNITION_PRIZE_PHOTOS: Record<string, string> = {
+  "Round 1": "ignition-r1-anker-battery.png",
+  "Round 2": "ignition-r2-polo.png",
+  "Round 3": "ignition-r3-hat.png",
+  "Round 4": "ignition-r4-rain-jacket.png",
+};
+
 function PrizesTab({ comp }: { comp: Comp }) {
   return (
     <div className="card p-6 fade-in">
       {comp.rounds && (
         <>
           <div className="section-header mb-4">Round Prizes</div>
-          <div className="flex flex-col gap-3">
-            {comp.rounds.map((r, i) => (
-              <div key={r.label} className="flex items-center gap-4 p-3 rounded-xl" style={{ background: "#141920", border: "1px solid #1e2530" }}>
-                <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-xs font-black text-green-400">{i+1}</div>
-                <div className="flex-1">
-                  <div className="font-semibold text-white text-sm">{r.label} · {r.dates}</div>
+          {/* Ignition: photo cards above each round row */}
+          {comp.id === "ignition" ? (
+            <div className="flex flex-col gap-4">
+              {comp.rounds.map((r, i) => {
+                const photo = IGNITION_PRIZE_PHOTOS[r.label];
+                return (
+                  <div key={r.label}>
+                    {photo && (
+                      <div className="rounded-xl overflow-hidden mb-2" style={{ background: "#141920", border: "1px solid #1e2530" }}>
+                        <img
+                          src={`/${photo}`}
+                          alt={r.prize}
+                          className="w-full object-cover"
+                          style={{ maxHeight: "180px", objectPosition: "center" }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4 p-3 rounded-xl" style={{ background: "#141920", border: "1px solid #1e2530" }}>
+                      <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-xs font-black text-orange-400">{i+1}</div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-white text-sm">{r.label} · {r.dates}</div>
+                      </div>
+                      <span className="prize-pill">{r.prize}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {comp.rounds.map((r, i) => (
+                <div key={r.label} className="flex items-center gap-4 p-3 rounded-xl" style={{ background: "#141920", border: "1px solid #1e2530" }}>
+                  <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center text-xs font-black text-green-400">{i+1}</div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-white text-sm">{r.label} · {r.dates}</div>
+                  </div>
+                  <span className="prize-pill">{r.prize}</span>
                 </div>
-                <span className="prize-pill">{r.prize}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
           {comp.grandPrize && (
             <div className="mt-4 p-4 rounded-xl text-center" style={{ background: "rgba(249,115,22,0.08)", border: "1px solid rgba(249,115,22,0.2)" }}>
               <div className="text-orange-400 font-black text-lg mb-1">🏆 Grand Prize</div>
@@ -878,7 +958,22 @@ function CompCard({ comp, now, isActive, onClick }: { comp: Comp; now: Date; isA
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
-          <div className="text-2xl">{comp.emoji}</div>
+          <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+            {comp.logo ? (
+              <img
+                src={`/${comp.logo}`}
+                alt={comp.name}
+                className="w-10 h-10 object-contain"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = "none";
+                  const fallback = target.nextElementSibling as HTMLElement | null;
+                  if (fallback) fallback.style.display = "block";
+                }}
+              />
+            ) : null}
+            <span className="text-2xl" style={{ display: comp.logo ? "none" : "block" }}>{comp.emoji}</span>
+          </div>
           <div>
             <div className="font-bold text-white text-sm">{comp.name}</div>
             <div className="text-xs text-gray-500 mt-0.5">{formatDateRange(comp.dates.start, comp.dates.end)}</div>
