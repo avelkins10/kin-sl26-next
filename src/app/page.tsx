@@ -261,6 +261,207 @@ function statusBadge(comp: Comp, now: Date): { label: string; style: React.CSSPr
 // ─────────────────────────────────────────────
 // SHARED: ICON TILE
 // ─────────────────────────────────────────────
+// WINNERS MODAL
+// ─────────────────────────────────────────────
+
+type WinnerRole = "Rookie" | "Veteran Setter" | "Closer";
+
+interface WinnersModalProps {
+  roundLabel: string;
+  roundDates: string;
+  roundStart: string;
+  role: WinnerRole;
+  accent: string;
+  onClose: () => void;
+}
+
+function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClose }: WinnersModalProps) {
+  const [winners, setWinners]   = useState<string[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const now = new Date();
+  const started = now >= parseLocal(roundStart);
+
+  useEffect(() => {
+    if (!started) { setLoading(false); return; }
+    fetch("/api/ignition/standings")
+      .then(r => r.json())
+      .then((d: IgnitionData) => {
+        const qualified = (d.reps || [])
+          .filter(rep => rep.role === role && rep.qualified)
+          .map(rep => rep.name);
+        setWinners(qualified);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, roundStart]);
+
+  return (
+    // Backdrop
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.55)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      {/* Card — stop propagation so clicking card doesn't close */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#fff", borderRadius: 20,
+          width: "100%", maxWidth: 340,
+          maxHeight: "70vh",
+          display: "flex", flexDirection: "column",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: "#1a1a1a" }}>{role} Winners</div>
+              <div style={{ fontSize: 12, color: "#aaa", marginTop: 2 }}>{roundLabel} · {roundDates}</div>
+            </div>
+            <button
+              onClick={onClose}
+              style={{ background: "rgba(0,0,0,0.07)", border: "none", borderRadius: "50%", width: 32, height: 32, fontSize: 14, cursor: "pointer", color: "#555", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+            >✕</button>
+          </div>
+          {/* Accent underline */}
+          <div style={{ height: 2, background: accent, borderRadius: 2, marginBottom: 16 }} />
+        </div>
+
+        {/* Body — scrollable */}
+        <div style={{ overflowY: "auto", padding: "0 20px 20px", flex: 1 }}>
+          {loading ? (
+            <p style={{ fontSize: 14, color: "#888", textAlign: "center", padding: "12px 0" }}>Loading…</p>
+          ) : !started ? (
+            <p style={{ fontSize: 14, color: "#888", textAlign: "center", padding: "12px 0" }}>
+              No winners yet — round starts {roundDates.split("–")[0].trim()}
+            </p>
+          ) : winners.length === 0 ? (
+            <p style={{ fontSize: 14, color: "#888", textAlign: "center", padding: "12px 0" }}>
+              No winners yet this round
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {winners.map((name, i) => (
+                <div key={name} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "10px 0",
+                  borderBottom: i < winners.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none",
+                }}>
+                  <span style={{
+                    width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
+                    background: i === 0 ? "#f5c842" : i === 1 ? "#c0c0c0" : i === 2 ? "#cd7f32" : "rgba(0,0,0,0.07)",
+                    color: i < 3 ? "#1a1a1a" : "#555",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 11, fontWeight: 800,
+                  }}>{i + 1}</span>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: "#1a1a1a" }}>{name}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 13 }}>✅</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// IGNITION INCENTIVES (tappable chips + modal)
+// ─────────────────────────────────────────────
+
+function IgnitionIncentives({ comp }: { comp: Comp }) {
+  const [modal, setModal] = useState<{ roundIdx: number; role: WinnerRole } | null>(null);
+  const now = new Date();
+
+  if (!comp.rounds) return null;
+
+  return (
+    <>
+      <h3>Round Prizes</h3>
+      <p>Earn every round independently — each week resets. Hit the target, win the prize.</p>
+      {comp.rounds.map((r, roundIdx) => {
+        const photo = IGNITION_PRIZE_PHOTOS[r.label];
+        const roundDef = IGNITION_ROUNDS[roundIdx];
+        const roundState = roundDef ? getRoundState(roundIdx, now) : "upcoming";
+        const hasWinnersIndicator = roundState !== "upcoming";
+
+        return (
+          <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
+            {/* Round header */}
+            <div style={{ marginBottom:10 }}>
+              <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
+              <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
+            </div>
+            {/* Target chips — tappable */}
+            {r.targets && (
+              <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                {(Object.entries(r.targets) as [WinnerRole, number][]).map(([role, n]) => (
+                  <button
+                    key={role}
+                    onClick={() => setModal({ roundIdx, role })}
+                    style={{
+                      flex:1, textAlign:"center",
+                      background:"rgba(255,255,255,0.1)",
+                      border: "none",
+                      borderRadius:8, padding:"8px 4px",
+                      cursor:"pointer",
+                      transition:"background 0.15s",
+                      position: "relative",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
+                  >
+                    <div style={{ fontSize:22, fontWeight:900, color:"#fff" }}>{n}</div>
+                    <div style={{ fontSize:10, opacity:0.7, marginTop:1, color:"#fff" }}>{role}</div>
+                    <div style={{ fontSize:10, opacity:0.5, color:"#fff" }}>KCA</div>
+                    {hasWinnersIndicator && (
+                      <div style={{
+                        position:"absolute", top:4, right:4,
+                        fontSize:9, background:"rgba(255,255,255,0.25)",
+                        borderRadius:10, padding:"1px 5px", color:"#fff",
+                        fontWeight:700,
+                      }}>👀</div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Prize photo */}
+            {photo && (
+              <div style={{ borderRadius:12, overflow:"hidden", background:"rgba(0,0,0,0.2)" }}>
+                <img src={`/${photo}`} alt={r.prize} style={{ width:"100%", maxHeight:200, objectFit:"contain", display:"block" }} />
+                <div style={{ textAlign:"center", padding:"10px 12px 12px", fontSize:14, fontWeight:700, color:"#fff" }}>{r.prize}</div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Modal */}
+      {modal !== null && (
+        <WinnersModal
+          roundLabel={comp.rounds[modal.roundIdx].label}
+          roundDates={comp.rounds[modal.roundIdx].dates}
+          roundStart={IGNITION_ROUNDS[modal.roundIdx]?.start ?? "2026-04-06"}
+          role={modal.role}
+          accent={comp.theme.accent}
+          onClose={() => setModal(null)}
+        />
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────
 
 function CompIcon({ comp, size = 40 }: { comp: Comp; size?: number }) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -497,43 +698,7 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
 
   // Incentives (includes targets + prize photos)
   if (section === "incentives") {
-    if (comp.id === "ignition" && comp.rounds) return (
-      <>
-        <h3>Round Prizes</h3>
-        <p>Earn every round independently — each week resets. Hit the target, win the prize.</p>
-        {comp.rounds.map(r => {
-          const photo = IGNITION_PRIZE_PHOTOS[r.label];
-          return (
-            <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-              {/* Round header */}
-              <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
-                <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
-              </div>
-              {/* Target chips */}
-              {r.targets && (
-                <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-                  {Object.entries(r.targets).map(([role,n])=>(
-                    <div key={role} style={{ flex:1, textAlign:"center", background:"rgba(255,255,255,0.1)", borderRadius:8, padding:"8px 4px" }}>
-                      <div style={{ fontSize:22, fontWeight:900 }}>{n}</div>
-                      <div style={{ fontSize:10, opacity:0.7, marginTop:1 }}>{role}</div>
-                      <div style={{ fontSize:10, opacity:0.5 }}>KCA</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {/* Prize photo */}
-              {photo && (
-                <div style={{ borderRadius:12, overflow:"hidden", background:"rgba(0,0,0,0.2)" }}>
-                  <img src={`/${photo}`} alt={r.prize} style={{ width:"100%", maxHeight:200, objectFit:"contain", display:"block" }} />
-                  <div style={{ textAlign:"center", padding:"10px 12px 12px", fontSize:14, fontWeight:700 }}>{r.prize}</div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </>
-    );
+    if (comp.id === "ignition" && comp.rounds) return <IgnitionIncentives comp={comp} />;
     if (comp.id === "blood-club" && comp.bloodTiers) return (
       <>
         <h3>Blood Club Rewards</h3>
