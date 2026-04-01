@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>KINsight™</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ─────────────────────────────────────────
+       RESET & BASE
+    ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #e8e8e0;
+      min-height: 100dvh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    /* ─────────────────────────────────────────
+       PHONE SHELL
+    ───────────────────────────────────────── */
+    #shell {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100dvh;
+      background: #F5F5F0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 480px) {
+      body { padding: 32px 16px; align-items: center; }
+      #shell {
+        min-height: 820px;
+        max-height: 820px;
+        border-radius: 44px;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12);
+        overflow: hidden;
+      }
+    }
+
+    /* ─────────────────────────────────────────
+       SCREENS
+    ───────────────────────────────────────── */
+    .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .screen.active { display: flex; }
+
+    /* ─────────────────────────────────────────
+       SCREEN 1 — HOME
+    ───────────────────────────────────────── */
+
+    /* Header */
+    .home-header {
+      padding: 20px 20px 12px;
+      background: #F5F5F0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .kinsight-wordmark {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .kinsight-symbol {
+      width: 34px; height: 34px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+    .kinsight-text {
+      font-size: 22px;
+      font-weight: 900;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    .kinsight-text sup { font-size: 10px; font-weight: 700; vertical-align: super; }
+    .home-date { font-size: 12px; font-weight: 500; color: #aaa; }
+
+    /* Program list */
+    .home-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 16px 32px;
+    }
+    .list-group-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #b0aea8;
+      margin: 20px 0 8px 2px;
+    }
+
+    /* Program row card */
+    .prog-row {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: box-shadow 0.15s, transform 0.1s, border-color 0.15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      position: relative;
+    }
+    .prog-row:hover  { box-shadow: 0 4px 14px rgba(0,0,0,0.11); }
+    .prog-row:active { transform: scale(0.975); }
+
+    .prog-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      font-size: 20px;
+    }
+    .prog-icon img { width: 100%; height: 100%; object-fit: contain; }
+
+    .prog-info { flex: 1; margin-left: 12px; min-width: 0; }
+    .prog-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+    .prog-dates { font-size: 11px; font-weight: 500; color: #aaa; margin-top: 2px; }
+
+    .prog-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; margin-left: 10px; }
+    .prog-tag {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .prog-status {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px;
+    }
+    .status-live     { background: rgba(34,197,94,0.12); color: #16a34a; }
+    .status-upcoming { background: rgba(0,0,0,0.06); color: #888; }
+    .status-soon     { background: rgba(0,0,0,0.05); color: #aaa; }
+    .status-done     { background: rgba(0,0,0,0.04); color: #bbb; }
+
+    .prog-chevron { color: #ccc; font-size: 18px; margin-left: 6px; }
+
+    /* ─────────────────────────────────────────
+       SCREEN 2 — COMPETITION DETAIL
+    ───────────────────────────────────────── */
+    .detail-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 0;
+      flex-shrink: 0;
+    }
+    .btn-back, .btn-close {
+      width: 34px; height: 34px;
+      border: none;
+      background: rgba(0,0,0,0.07);
+      border-radius: 50%;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: #444;
+      transition: background 0.12s;
+    }
+    .btn-back:hover, .btn-close:hover { background: rgba(0,0,0,0.13); }
+
+    /* Hero logo block */
+    .detail-hero {
+      padding: 18px 24px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .detail-hero img {
+      max-height: 72px;
+      max-width: 260px;
+      object-fit: contain;
+    }
+    .detail-hero-emoji {
+      font-size: 48px;
+      line-height: 1;
+    }
+
+    /* Buttons */
+    .detail-buttons {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px 20px 24px;
+    }
+    /* accent color applied via inline style on .section-btn */
+    .section-btn {
+      border: none;
+      border-radius: 16px;
+      padding: 20px 24px;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      text-align: center;
+      color: #fff;
+      transition: filter 0.15s, transform 0.1s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+    }
+    .section-btn:hover  { filter: brightness(1.08); }
+    .section-btn:active { transform: scale(0.97); }
+
+    /* ─────────────────────────────────────────
+       SCREEN 3 — CONTENT VIEW
+    ───────────────────────────────────────── */
+    .content-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 0;
+      flex-shrink: 0;
+    }
+    .content-logo {
+      padding: 12px 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .content-logo img  { max-height: 44px; max-width: 180px; object-fit: contain; }
+    .content-logo .emoji-logo { font-size: 32px; }
+    .content-section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* The colored content card */
+    .content-card {
+      flex: 1;
+      overflow-y: auto;
+      margin: 12px 16px 0;
+      border-radius: 20px;
+      padding: 22px 20px;
+      color: #fff;
+    }
+    .content-card h3 { font-size: 17px; font-weight: 800; margin-bottom: 12px; }
+    .content-card p  { font-size: 14px; line-height: 1.65; opacity: 0.92; margin-bottom: 10px; }
+    .content-card ul { padding-left: 18px; margin-bottom: 10px; }
+    .content-card li { font-size: 14px; line-height: 1.65; opacity: 0.92; margin-bottom: 5px; }
+    .content-card strong { font-weight: 700; }
+
+    /* Round blocks inside content card */
+    .round-block {
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .round-block-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .round-label { font-size: 14px; font-weight: 700; }
+    .round-dates { font-size: 12px; opacity: 0.7; }
+    .round-prize {
+      font-size: 11px; font-weight: 700;
+      background: rgba(255,255,255,0.2);
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .round-targets { display: flex; gap: 8px; }
+    .target-chip {
+      flex: 1; text-align: center;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 4px;
+    }
+    .target-num  { font-size: 22px; font-weight: 900; }
+    .target-role { font-size: 10px; opacity: 0.7; margin-top: 1px; }
+    .target-unit { font-size: 10px; opacity: 0.5; }
+
+    /* Incentive image slot */
+    .incentive-slot {
+      background: rgba(255,255,255,0.15);
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 14px;
+      height: 160px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      margin: 10px 0;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px; font-weight: 600;
+      gap: 6px;
+    }
+    .incentive-slot .slot-icon { font-size: 28px; }
+
+    /* Standings table */
+    .standings-table { width: 100%; border-collapse: collapse; }
+    .standings-table th {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px;
+      color: rgba(255,255,255,0.55); text-align: left;
+      padding: 0 0 8px; border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+    .standings-table td { padding: 9px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .standings-table tr:last-child td { border-bottom: none; }
+    .rank-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 11px; font-weight: 800;
+    }
+    .rank-1 { background: #f5c842; color: #1a1a1a; }
+    .rank-2 { background: #c0c0c0; color: #1a1a1a; }
+    .rank-3 { background: #cd7f32; color: #fff; }
+    .rank-n { background: rgba(255,255,255,0.15); color: #fff; }
+
+    /* ─────────────────────────────────────────
+       SCREEN 4 — COMING SOON
+    ───────────────────────────────────────── */
+    #screen-soon {
+      align-items: center;
+      justify-content: center;
+    }
+    .soon-topbar {
+      position: absolute; top: 16px; right: 20px;
+    }
+    .soon-body { text-align: center; padding: 40px 28px; }
+    .soon-emoji { font-size: 52px; margin-bottom: 16px; }
+    .soon-name  { font-size: 22px; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+    .soon-sub   { font-size: 14px; color: #888; line-height: 1.5; margin-bottom: 28px; }
+    .btn-soon-back {
+      display: inline-block;
+      border: none; border-radius: 14px;
+      padding: 14px 32px;
+      font-size: 15px; font-weight: 700;
+      color: #fff; cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .btn-soon-back:hover { filter: brightness(1.1); }
+
+    /* ─────────────────────────────────────────
+       SHARED FOOTER
+    ───────────────────────────────────────── */
+    .footer-logo {
+      text-align: center;
+      font-size: 12px; font-weight: 700;
+      color: #c8c6c0; letter-spacing: 0.5px;
+      padding: 10px 0 18px;
+      flex-shrink: 0;
+    }
+    .footer-logo sup { font-size: 8px; vertical-align: super; }
+
+    /* ─────────────────────────────────────────
+       SCROLLBAR
+    ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
+  </style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- ══════════════════════════════════════
+       SCREEN 1 — HOME
+  ══════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+
+    <div class="home-header">
+      <div class="kinsight-wordmark">
+        <div class="kinsight-symbol">正</div>
+        <div class="kinsight-text">KINsight<sup>™</sup></div>
+      </div>
+      <div class="home-date" id="header-date"></div>
+    </div>
+
+    <div class="home-list" id="home-list">
+      <!-- rendered by JS -->
+    </div>
+
+    <div class="footer-logo">kinsight<sup>™</sup></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 2 — COMPETITION DETAIL
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-detail">
+
+    <div class="detail-topbar">
+      <button class="btn-back"  onclick="goHome()">&#8249;</button>
+      <button class="btn-close" onclick="goHome()">&#x2715;</button>
+    </div>
+
+    <div class="detail-hero" id="detail-hero">
+      <!-- logo injected by JS -->
+    </div>
+
+    <div class="detail-buttons" id="detail-buttons">
+      <!-- buttons injected by JS -->
+    </div>
+
+    <div class="footer-logo">kinsight<sup>™</sup></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 3 — CONTENT VIEW
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-content">
+
+    <div class="content-topbar">
+      <button class="btn-back"  onclick="backToDetail()">&#8249;</button>
+      <button class="btn-close" onclick="goHome()">&#x2715;</button>
+    </div>
+
+    <div class="content-logo" id="content-logo">
+      <!-- logo + section label injected by JS -->
+    </div>
+
+    <div class="content-card" id="content-card">
+      <!-- content injected by JS -->
+    </div>
+
+    <div class="footer-logo">kinsight<sup>™</sup></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SCREEN 4 — COMING SOON
+  ══════════════════════════════════════ -->
+  <div class="screen" id="screen-soon">
+    <div class="soon-topbar">
+      <button class="btn-close" onclick="goHome()">&#x2715;</button>
+    </div>
+    <div class="soon-body">
+      <div class="soon-emoji" id="soon-emoji">🚧</div>
+      <div class="soon-name"  id="soon-name">Program</div>
+      <div class="soon-sub">Content for this competition is coming soon. Check back before it begins!</div>
+      <button class="btn-soon-back" id="soon-back-btn" onclick="goHome()">← Back to Programs</button>
+    </div>
+  </div>
+
+</div><!-- #shell -->
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────
+// COMPETITION DATA
+// Each comp has a `theme` object — accent color, tag color, logo.
+// Ignition is fully built. Others are stubs.
+// ─────────────────────────────────────────────────────────────────
+
+const COMPS = [
+
+  // ── SL28 ─────────────────────────────────────────────────────
+  {
+    id: 'ignition',
+    name: 'Ignition',
+    group: 'sl28',
+    stub: false,
+    dates: { start: '2026-04-06', end: '2026-05-03' },
+    subtitle: 'Hit the threshold. Earn the prize.',
+    theme: {
+      accent: '#2a6ca0',
+      accentSoft: 'rgba(42,108,160,0.10)',
+      accentText: '#2a6ca0',
+      tag: 'SL28',
+      logo: 'ignition-logo.png',
+      logoAlt: 'Ignition',
+    },
+    // Content sections
+    sections: {
+      rules: {
+        label: 'Rules',
+        render: renderIgnitionRules,
+      },
+      metrics: {
+        label: 'Metrics',
+        render: renderIgnitionMetrics,
+      },
+      incentives: {
+        label: 'Incentives',
+        render: renderIgnitionIncentives,
+      },
+      standings: {
+        label: 'Standings',
+        render: renderIgnitionStandings,
+      },
+    },
+    // Raw data used by renderers
+    rounds: [
+      { label: 'Round 1', dates: 'Apr 6–12',     prize: 'Anker 621 MagSafe Battery',  targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+      { label: 'Round 2', dates: 'Apr 13–19',    prize: 'New Polo',                    targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+      { label: 'Round 3', dates: 'Apr 20–26',    prize: 'Knocking Hat',                targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+      { label: 'Round 4', dates: 'Apr 27–May 3', prize: 'Short Sleeve Rain Jacket',    targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+    ],
+  },
+
+  // ── STUBS — SL28 ─────────────────────────────────────────────
+  {
+    id: 'wars',
+    name: 'Wars', group: 'sl28', stub: true,
+    dates: { start: '2026-05-04', end: '2026-05-31' },
+    subtitle: 'Office vs. office — best PRA wins.',
+    theme: { accent: '#d2fa06', accentSoft: 'rgba(210,250,6,0.18)', accentText: '#5a6b00', tag: 'SL28',
+             logo: 'wars-logo.png', logoAlt: 'Wars', btnTextColor: '#1a1a1a' },
+  },
+  {
+    id: 'the-drop',
+    name: 'The Drop', group: 'sl28', stub: true,
+    dates: { start: '2026-06-01', end: '2026-06-27' },
+    subtitle: 'New prize every day. Will you earn it?',
+    theme: { accent: '#db08f9', accentSoft: 'rgba(219,8,249,0.10)', accentText: '#9600b0', tag: 'SL28',
+             logo: 'the-drop-logo.png', logoAlt: 'The Drop' },
+  },
+  {
+    id: 'supercrown',
+    name: 'Supercrown', group: 'sl28', stub: true,
+    dates: { start: '2026-06-29', end: '2026-08-02' },
+    subtitle: '1 setter + 1 closer winner every week.',
+    // Supercrown logo is mint on white — multiply blend makes white transparent on light bg
+    // For colored card bg, use extracted transparent PNG from assets/
+    theme: { accent: '#bce9c8', accentSoft: 'rgba(188,233,200,0.25)', accentText: '#1e7a40', tag: 'SL28',
+             logo: 'supercrown-logo.png', logoAlt: 'Supercrown',
+             logoCardSrc: 'assets/supercrown.png', // transparent version for colored card bg
+             btnTextColor: '#1a1a1a' },
+  },
+  {
+    id: 'the-throne',
+    name: 'The Throne', group: 'sl28', stub: true,
+    dates: { start: '2026-08-03', end: '2026-08-29' },
+    subtitle: 'March Madness bracket. D4W-seeded.',
+    theme: { accent: '#e64d57', accentSoft: 'rgba(230,77,87,0.10)', accentText: '#b82832', tag: 'SL28',
+             logo: 'the-throne-logo.png', logoAlt: 'The Throne' },
+  },
+
+  // ── STUBS — SUMMER LONG ──────────────────────────────────────
+  {
+    id: 'd4w',
+    name: 'D4W', group: 'summer', stub: true,
+    dates: { start: '2026-04-27', end: '2026-08-30' },
+    subtitle: 'Dinners for Winners. 18 weeks.',
+    theme: { accent: '#b45309', accentSoft: 'rgba(180,83,9,0.1)', accentText: '#b45309', tag: 'Summer Long', logo: null },
+  },
+  {
+    id: 'kwclub',
+    name: 'kW Club', group: 'summer', stub: true,
+    dates: { start: '2026-04-27', end: '2026-09-12' },
+    subtitle: 'Stack deals. Unlock gear.',
+    theme: { accent: '#15803d', accentSoft: 'rgba(21,128,61,0.1)', accentText: '#15803d', tag: 'Summer Long', logo: null },
+  },
+  {
+    id: 'the-ten',
+    name: 'The Ten', group: 'summer', stub: true,
+    dates: { start: '2026-04-27', end: '2026-09-12' },
+    subtitle: 'Top 10 reps. All summer. One trip.',
+    theme: { accent: '#0369a1', accentSoft: 'rgba(3,105,161,0.1)', accentText: '#0369a1', tag: 'Summer Long', logo: null },
+  },
+
+  // ── YEAR LONG ────────────────────────────────────────────────
+  {
+    id: 'blood-club',
+    name: 'Blood Club', group: 'yearlong', stub: false,
+    dates: { start: '2026-01-01', end: '2026-12-31' },
+    subtitle: '2 same-day closes on a Saturday.',
+    theme: {
+      accent: '#b91c1c',
+      accentSoft: 'rgba(185,28,28,0.10)',
+      accentText: '#b91c1c',
+      tag: 'Year Long',
+      logo: 'blood-club-logo.png',
+      logoAlt: 'Blood Club',
+    },
+    sections: {
+      rules: {
+        label: 'Rules',
+        render: renderBloodClubRules,
+      },
+      metrics: {
+        label: 'Metrics',
+        render: renderBloodClubMetrics,
+      },
+      incentives: {
+        label: 'Incentives',
+        render: renderBloodClubIncentives,
+      },
+      standings: {
+        label: 'Standings',
+        render: renderBloodClubStandings,
+      },
+    },
+  },
+];
+
+// Emoji fallbacks for stubs (when no logo provided)
+const COMP_EMOJI = {
+  ignition: '🏁', wars: '⚔️', 'the-drop': '📦',
+  supercrown: '👑', 'the-throne': '🪑',
+  d4w: '🍽️', kwclub: '⚡', 'the-ten': '🏅',
+  'blood-club': '🩸',
+};
+
+// ─────────────────────────────────────────────────────────────────
+// STATUS HELPERS
+// ─────────────────────────────────────────────────────────────────
+
+const today = new Date();
+
+function getStatus(comp) {
+  const s = new Date(comp.dates.start), e = new Date(comp.dates.end);
+  if (today >= s && today <= e) return 'live';
+  if (today < s) return 'upcoming';
+  return 'done';
+}
+
+function fmtRange(start, end) {
+  const o = { month: 'short', day: 'numeric' };
+  return `${new Date(start).toLocaleDateString('en-US', o)} – ${new Date(end).toLocaleDateString('en-US', o)}`;
+}
+
+function daysNote(comp) {
+  const s = getStatus(comp);
+  if (s === 'done') return 'Complete';
+  const target = s === 'live' ? comp.dates.end : comp.dates.start;
+  const d = Math.ceil((new Date(target) - today) / 86400000);
+  if (s === 'live')     return `${d}d left`;
+  if (s === 'upcoming') return d > 0 ? `Starts in ${d}d` : 'Starting soon';
+  return '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CONTENT RENDERERS — IGNITION
+// ─────────────────────────────────────────────────────────────────
+
+function renderIgnitionRules(comp) {
+  return `
+    <h3>How Ignition Works</h3>
+    <p>Individual threshold competition — every rep who hits their weekly KCA target during the round window earns the prize. No ranking, no competition. Hit the number and get it.</p>
+    <p><strong>Eligibility by role:</strong></p>
+    <ul>
+      <li><strong>Rookie</strong> — first summer with KIN</li>
+      <li><strong>Veteran</strong> — returning setter</li>
+      <li><strong>Closer</strong> — closer role</li>
+    </ul>
+    <p>KCAs counted from QuickBase (Status = KCA or Active) using sale date within each round window.</p>
+    <p style="opacity:0.65;font-size:12px;margin-top:14px;">★ Placeholder — Jake will provide final rules before Apr 6.</p>
+  `;
+}
+
+function renderIgnitionMetrics(comp) {
+  const rows = comp.rounds.map(r => `
+    <div class="round-block">
+      <div class="round-block-header">
+        <div>
+          <div class="round-label">${r.label}</div>
+          <div class="round-dates">${r.dates}</div>
+        </div>
+        <div class="round-prize">${r.prize}</div>
+      </div>
+      <div class="round-targets">
+        ${Object.entries(r.targets).map(([role, n]) => `
+          <div class="target-chip">
+            <div class="target-num">${n}</div>
+            <div class="target-role">${role}</div>
+            <div class="target-unit">KCA</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <h3>KCA Targets by Round</h3>
+    <p>Hit your role's weekly target to win the round prize. Every qualifying rep wins — no cap on winners.</p>
+    ${rows}
+    <p style="opacity:0.65;font-size:12px;margin-top:6px;">★ Targets subject to change before Apr 6.</p>
+  `;
+}
+
+function renderIgnitionIncentives(comp) {
+  const prizeImages = [
+    'assets/ignition-r1-anker-battery.png',
+    'assets/ignition-r2-polo.png',
+    'assets/ignition-r3-hat.png',
+    'assets/ignition-r4-rain-jacket.png',
+  ];
+  const prizes = comp.rounds.map((r, i) => `
+    <div class="round-block">
+      <div class="round-block-header">
+        <div>
+          <div class="round-label">${r.label}</div>
+          <div class="round-dates">${r.dates}</div>
+        </div>
+      </div>
+      <div style="border-radius:12px;overflow:hidden;background:rgba(0,0,0,0.25);margin-top:4px;">
+        <img src="${prizeImages[i]}" alt="${r.prize}"
+             style="width:100%;max-height:200px;object-fit:contain;display:block;">
+        <div style="text-align:center;padding:10px 12px 12px;font-size:14px;font-weight:700;">${r.prize}</div>
+      </div>
+    </div>
+  `).join('');
+
+  return `
+    <h3>Round Prizes</h3>
+    <p>Earn every round independently — each week resets. Hit the target, win the prize.</p>
+    ${prizes}
+  `;
+}
+
+function renderIgnitionStandings(comp) {
+  return `
+    <h3>Live Standings</h3>
+    <p>Leaderboard goes live April 6 when Ignition begins.</p>
+    ${comp.rounds.map(r => `
+      <div class="round-block">
+        <div class="round-block-header">
+          <div class="round-label">${r.label}</div>
+          <div class="round-dates">${r.dates}</div>
+        </div>
+        <table class="standings-table">
+          <thead><tr><th>#</th><th>Rep</th><th>Role</th><th style="text-align:right">KCA</th></tr></thead>
+          <tbody>
+            <tr><td colspan="4" style="text-align:center;padding:16px 0;opacity:0.5;font-size:13px;">Starts ${r.dates.split('–')[0].trim()}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `).join('')}
+    <p style="opacity:0.65;font-size:12px;margin-top:6px;">★ Wire to live data when ready.</p>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CONTENT RENDERERS — BLOOD CLUB
+// ─────────────────────────────────────────────────────────────────
+
+function renderBloodClubRules(comp) {
+  return `
+    <h3>How Blood Club Works</h3>
+    <p>Blood Club is the ultimate closer challenge — running all year long. To earn membership, you must close <strong>2 deals on the same Saturday</strong>. One Saturday. Two closes. That's it.</p>
+    <p><strong>The rules:</strong></p>
+    <ul>
+      <li>Both closes must have the same sale date in QuickBase</li>
+      <li>That sale date must fall on a Saturday</li>
+      <li>Both deals must reach KCA status (no cancels)</li>
+      <li>Achievement is permanent — once you're in, you're in</li>
+    </ul>
+    <p>Blood Club members earn exclusive recognition and are eligible for Blood Club-only incentives throughout 2026.</p>
+    <p style="opacity:0.65;font-size:12px;margin-top:14px;">★ Final rules confirmed by Jake Stewart. Check with leadership for any updates.</p>
+  `;
+}
+
+function renderBloodClubMetrics(comp) {
+  return `
+    <h3>The Qualifying Standard</h3>
+    <div class="round-block">
+      <div class="round-block-header">
+        <div>
+          <div class="round-label">2 Closes</div>
+          <div class="round-dates">Same Saturday</div>
+        </div>
+        <div class="round-prize">Blood Club Entry</div>
+      </div>
+      <div class="round-targets">
+        <div class="target-chip">
+          <div class="target-num">2</div>
+          <div class="target-role">Closes</div>
+          <div class="target-unit">same day</div>
+        </div>
+        <div class="target-chip">
+          <div class="target-num">1</div>
+          <div class="target-role">Saturday</div>
+          <div class="target-unit">any week</div>
+        </div>
+        <div class="target-chip">
+          <div class="target-num">KCA</div>
+          <div class="target-role">Status</div>
+          <div class="target-unit">required</div>
+        </div>
+      </div>
+    </div>
+    <p>Both deals must reach KCA (KIN Confirmed Account) status — no cancelled deals count toward membership.</p>
+    <p style="opacity:0.65;font-size:12px;margin-top:6px;">★ Saturdays only — not Sunday, not weekday. Saturday.</p>
+  `;
+}
+
+function renderBloodClubIncentives(comp) {
+  return `
+    <h3>Blood Club Rewards</h3>
+    <p>Blood Club is about <strong>permanent status</strong>. Once you're in, you're recognized all year and eligible for exclusive member-only incentives.</p>
+    <div class="round-block">
+      <div class="round-block-header">
+        <div class="round-label">Membership Badge</div>
+      </div>
+      <p style="font-size:13px;opacity:0.85;margin-bottom:0;">Permanent Blood Club designation — recognized on leaderboards, in standings, and by leadership all year.</p>
+    </div>
+    <div class="round-block">
+      <div class="round-block-header">
+        <div class="round-label">Member-Only Incentives</div>
+      </div>
+      <div class="incentive-slot">
+        <div class="slot-icon">🩸</div>
+        <div>Exclusive perks for members</div>
+        <div style="font-size:11px;opacity:0.6;font-weight:500;">Details from Jake coming soon</div>
+      </div>
+    </div>
+    <p style="opacity:0.65;font-size:12px;margin-top:6px;">★ Incentive details to be added by Jake.</p>
+  `;
+}
+
+function renderBloodClubStandings(comp) {
+  return `
+    <h3>Blood Club Members — 2026</h3>
+    <p>These closers have earned Blood Club status by closing 2 deals on a Saturday.</p>
+    <table class="standings-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Closer</th>
+          <th>Date Earned</th>
+          <th style="text-align:right">Entries</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="4" style="text-align:center;padding:24px 0;opacity:0.5;font-size:13px;">
+            No members yet — be the first 🩸
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="opacity:0.65;font-size:12px;margin-top:14px;">★ Wire to live QuickBase data when ready.</p>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NAVIGATION STATE
+// ─────────────────────────────────────────────────────────────────
+
+let state = { comp: null, section: null };
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  state = { comp: null, section: null };
+  showScreen('screen-home');
+}
+
+function backToDetail() {
+  state.section = null;
+  showScreen('screen-detail');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// OPEN COMPETITION
+// ─────────────────────────────────────────────────────────────────
+
+function openComp(id) {
+  const comp = COMPS.find(c => c.id === id);
+  if (!comp) return;
+  state.comp = comp;
+  state.section = null;
+
+  if (comp.stub) {
+    const emojiEl = document.getElementById('soon-emoji');
+    if (comp.theme.logo) {
+      emojiEl.innerHTML = `
+        <div style="background:${comp.theme.accentSoft};border-radius:16px;padding:16px 24px;display:inline-block;">
+          <img src="${comp.theme.logo}" alt="${comp.name}"
+               style="height:56px;max-width:200px;object-fit:contain;display:block;mix-blend-mode:multiply;">
+        </div>`;
+    } else {
+      emojiEl.innerHTML = COMP_EMOJI[id] || '🚧';
+    }
+    document.getElementById('soon-name').textContent = comp.name;
+    const btn = document.getElementById('soon-back-btn');
+    btn.style.background = comp.theme.accent;
+    btn.style.color = comp.theme.btnTextColor || '#fff';
+    showScreen('screen-soon');
+    return;
+  }
+
+  // Build detail screen
+  const hero = document.getElementById('detail-hero');
+  if (comp.theme.logo) {
+    hero.innerHTML = `
+      <div style="background:${comp.theme.accentSoft};border-radius:16px;padding:16px 24px;
+                  display:flex;align-items:center;justify-content:center;width:100%;">
+        <img src="${comp.theme.logo}" alt="${comp.theme.logoAlt || comp.name}"
+             style="max-height:68px;max-width:260px;object-fit:contain;mix-blend-mode:multiply;">
+      </div>`;
+  } else {
+    hero.innerHTML = `<div class="detail-hero-emoji">${COMP_EMOJI[id] || '🏆'}</div>`;
+  }
+
+  const btns = document.getElementById('detail-buttons');
+  const sections = Object.entries(comp.sections);
+  const btnColor = comp.theme.btnTextColor || '#fff';
+  btns.innerHTML = sections.map(([key, sec]) => `
+    <button class="section-btn"
+      style="background:${comp.theme.accent};color:${btnColor};"
+      onclick="openSection('${key}')">
+      ${sec.label}
+    </button>
+  `).join('');
+
+  showScreen('screen-detail');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// OPEN SECTION (content view)
+// ─────────────────────────────────────────────────────────────────
+
+function openSection(key) {
+  const comp = state.comp;
+  if (!comp) return;
+  const sec = comp.sections[key];
+  state.section = key;
+
+  // Logo block — above the colored card
+  const logoEl = document.getElementById('content-logo');
+  const logoHtml = comp.theme.logo
+    ? `<div style="background:${comp.theme.accentSoft};border-radius:12px;padding:8px 18px;">
+         <img src="${comp.theme.logo}" alt="${comp.theme.logoAlt||comp.name}"
+              style="max-height:36px;max-width:140px;object-fit:contain;display:block;mix-blend-mode:multiply;">
+       </div>`
+    : `<div class="emoji-logo">${COMP_EMOJI[comp.id] || '🏆'}</div>`;
+  logoEl.innerHTML = `
+    ${logoHtml}
+    <div class="content-section-label" style="color:${comp.theme.accent};">${sec.label}</div>
+  `;
+
+  // Content card — colored background, white text
+  const card = document.getElementById('content-card');
+  card.style.background = comp.theme.accent;
+  card.style.color = comp.theme.btnTextColor || '#fff';
+  card.innerHTML = sec.render(comp);
+
+  showScreen('screen-content');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER HOME LIST
+// ─────────────────────────────────────────────────────────────────
+
+function renderHome() {
+  const groups = [
+    { key: 'sl28',     label: 'SL28 Programs' },
+    { key: 'summer',   label: 'Summer Long' },
+    { key: 'yearlong', label: 'Year Long' },
+  ];
+
+  let html = '';
+  for (const g of groups) {
+    const comps = COMPS.filter(c => c.group === g.key);
+    if (!comps.length) continue;
+    html += `<div class="list-group-label">${g.label}</div>`;
+    for (const comp of comps) {
+      const status = comp.stub ? 'soon' : getStatus(comp);
+      const statusLabels = { live: 'LIVE', upcoming: 'UPCOMING', done: 'DONE', soon: 'SOON' };
+      const statusClasses = { live: 'status-live', upcoming: 'status-upcoming', done: 'status-done', soon: 'status-soon' };
+      const note = comp.stub ? 'Coming Soon' : daysNote(comp);
+
+      // Icon — logo with multiply blend (white bg disappears on light tile)
+      const iconHtml = comp.theme.logo
+        ? `<img src="${comp.theme.logo}" alt="${comp.name}"
+               style="width:100%;height:100%;object-fit:contain;padding:4px;mix-blend-mode:multiply;">`
+        : COMP_EMOJI[comp.id] || '🏆';
+      // Always use the soft accent tint as icon tile bg — no dark containers
+      const iconBg = comp.theme.accentSoft;
+
+      html += `
+        <div class="prog-row" onclick="openComp('${comp.id}')">
+          <div class="prog-icon" style="background:${iconBg};">${iconHtml}</div>
+          <div class="prog-info">
+            <div class="prog-name">${comp.name}</div>
+            <div class="prog-dates">${fmtRange(comp.dates.start, comp.dates.end)}</div>
+          </div>
+          <div class="prog-right">
+            <span class="prog-tag" style="background:${comp.theme.accentSoft};color:${comp.theme.accentText};">${comp.theme.tag}</span>
+            <span class="prog-status ${statusClasses[status]}">${statusLabels[status]}</span>
+          </div>
+          <span class="prog-chevron">›</span>
+        </div>
+      `;
+    }
+  }
+
+  document.getElementById('home-list').innerHTML = html;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────
+
+function init() {
+  const el = document.getElementById('header-date');
+  if (el) el.textContent = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  renderHome();
+}
+
+init();
+</script>
+</body>
+</html>
