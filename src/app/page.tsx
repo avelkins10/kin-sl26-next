@@ -646,7 +646,7 @@ function DesktopLayout({ now }: { now: Date }) {
         flexShrink:0,
         position:"sticky", top:0, zIndex:50,
       }}>
-        <img src="/sl26-logo.png" alt="Street League SL26" style={{ height:40, objectFit:"contain" }} />
+        <img src="/sl26-logo.png" alt="Street League SL26" style={{ height:40, objectFit:"contain", filter:"brightness(0)" }} />
         <div style={{ fontSize:13, fontWeight:500, color:"#aaa" }}>{dateString}</div>
       </header>
 
@@ -756,7 +756,7 @@ function MobileLayout({ now }: { now: Date }) {
         {screen === "home" && (
           <div style={{ display:"flex", flexDirection:"column", flex:1, overflow:"hidden" }}>
             <div style={{ padding:"20px 20px 12px", background:"#F5F5F0", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-              <img src="/sl26-logo.png" alt="Street League SL26" style={{ height:36, objectFit:"contain" }} />
+              <img src="/sl26-logo.png" alt="Street League SL26" style={{ height:36, objectFit:"contain", filter:"brightness(0)" }} />
               <div style={{ fontSize:12, fontWeight:500, color:"#aaa" }}>{dateString}</div>
             </div>
             <div style={{ flex:1, overflowY:"auto", padding:"4px 16px 32px" }}>
