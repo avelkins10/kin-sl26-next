@@ -258,10 +258,6 @@ function statusBadge(comp: Comp, now: Date): { label: string; style: React.CSSPr
   return { label: "DONE", style: { background: "rgba(0,0,0,0.04)", color: "#bbb" } };
 }
 
-function fmt(d: string): string {
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
 // ─────────────────────────────────────────────
 // SHARED: ICON TILE
 // ─────────────────────────────────────────────
@@ -306,17 +302,50 @@ interface IgnitionData {
   reps?: { name: string; role: "Rookie" | "Veteran Setter" | "Closer"; kca: number; kw: number; qualified: boolean }[];
 }
 
+// Ignition round definitions (dates used for accordion state logic)
+const IGNITION_ROUNDS = [
+  { label: "Round 1", dates: "Apr 6–12",     start: "2026-04-06", end: "2026-04-12" },
+  { label: "Round 2", dates: "Apr 13–19",    start: "2026-04-13", end: "2026-04-19" },
+  { label: "Round 3", dates: "Apr 20–26",    start: "2026-04-20", end: "2026-04-26" },
+  { label: "Round 4", dates: "Apr 27–May 3", start: "2026-04-27", end: "2026-05-03" },
+];
+
+function getDefaultOpenRound(now: Date): number {
+  // Return 0-based index of the active or closest upcoming round
+  for (let i = 0; i < IGNITION_ROUNDS.length; i++) {
+    const r = IGNITION_ROUNDS[i];
+    const s = parseLocal(r.start), e = parseLocal(r.end);
+    if (now >= s && now <= e) return i; // currently live
+  }
+  // Before Ignition starts or between rounds — open first upcoming
+  for (let i = 0; i < IGNITION_ROUNDS.length; i++) {
+    if (now < parseLocal(IGNITION_ROUNDS[i].start)) return i;
+  }
+  return IGNITION_ROUNDS.length - 1; // all done, show last
+}
+
+function getRoundState(roundIdx: number, now: Date): "upcoming" | "live" | "complete" {
+  const r = IGNITION_ROUNDS[roundIdx];
+  const s = parseLocal(r.start), e = parseLocal(r.end);
+  if (now > e) return "complete";
+  if (now >= s) return "live";
+  return "upcoming";
+}
+
 function IgnitionStandingsContent() {
+  const now = new Date();
   const [data, setData] = useState<IgnitionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openRound, setOpenRound] = useState<number>(() => getDefaultOpenRound(now));
 
   useEffect(() => {
-    if (new Date() < new Date("2026-04-06")) {
+    if (now < new Date("2026-04-06")) {
       setData({ status: "not_started" }); setLoading(false); return;
     }
     fetch("/api/ignition/standings")
       .then(r => r.json()).then((d: IgnitionData) => { setData(d); setLoading(false); })
       .catch(() => { setData({ status: "not_started" }); setLoading(false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const rankStyles: Record<number, React.CSSProperties> = {
@@ -327,62 +356,116 @@ function IgnitionStandingsContent() {
 
   if (loading) return <p style={{ opacity: 0.7, fontSize: 14 }}>Loading standings…</p>;
 
-  if (!data || data.status === "not_started") {
-    return (
-      <>
-        <h3>Live Standings</h3>
-        <p>Leaderboard goes live April 6 when Ignition begins.</p>
-        {COMPS.find(c => c.id === "ignition")?.rounds?.map(r => (
-          <div key={r.label} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{r.label}</span>
-              <span style={{ fontSize: 12, opacity: 0.7 }}>{r.dates}</span>
-            </div>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead><tr>{["#","Rep","KCA"].map((h,i) => <th key={h} style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: i===2?"right":"left", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>{h}</th>)}</tr></thead>
-              <tbody><tr><td colSpan={3} style={{ textAlign: "center", padding: "16px 0", opacity: 0.5, fontSize: 13 }}>Starts {r.dates.split("–")[0].trim()}</td></tr></tbody>
-            </table>
-          </div>
-        ))}
-      </>
-    );
-  }
-
-  if (data.status === "ended") return <><h3>Ignition Complete</h3><p>Season ended May 3.</p></>;
-
-  const roles: Array<"Rookie"|"Veteran Setter"|"Closer"> = ["Rookie","Veteran Setter","Closer"];
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <h3 style={{ marginBottom: 0 }}>{data.roundLabel} · {fmt(data.startDate!)}–{fmt(data.endDate!)}</h3>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
-      </div>
-      {roles.map(role => {
-        const reps = (data.reps||[]).filter(r=>r.role===role).sort((a,b)=>b.kca-a.kca);
-        const target = data.targets?.[role==="Veteran Setter"?"Veteran":role]??1;
+      <h3 style={{ marginBottom: 12 }}>Live Standings</h3>
+      {data?.updatedAt && (
+        <p style={{ fontSize: 11, opacity: 0.5, marginBottom: 12 }}>
+          Updated {new Date(data.updatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+          <span style={{ marginLeft: 6, display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#4ade80", verticalAlign: "middle", animation: "pulse 2s infinite" }} />
+        </p>
+      )}
+      {IGNITION_ROUNDS.map((round, idx) => {
+        const isOpen = openRound === idx;
+        const roundState = getRoundState(idx, now);
+        const isLive = roundState === "live";
+
+        // Get reps for this round from API data (only meaningful when live/complete)
+        const liveRoundMatch = data?.round === idx + 1;
+        const reps = (liveRoundMatch && data?.reps) ? data.reps : [];
+        const targets = data?.targets;
+
         return (
-          <div key={role} style={{ background: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", opacity: 0.7, marginBottom: 8 }}>{role}</div>
-            {reps.length===0 ? <div style={{ fontSize: 13, opacity: 0.5, fontStyle: "italic" }}>No data yet</div> : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr>{["#","Rep","KCA"].map((h,i)=><th key={h} style={{ fontSize: 10, textTransform:"uppercase", letterSpacing:"0.8px", color:"rgba(255,255,255,0.55)", textAlign:i===2?"right":"left", paddingBottom:8, borderBottom:"1px solid rgba(255,255,255,0.15)" }}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {reps.map((rep,i)=>(
-                    <tr key={rep.name}>
-                      <td style={{ padding:"9px 0", fontSize:13, borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
-                        <span style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:22, height:22, borderRadius:"50%", fontSize:11, fontWeight:800, ...(rankStyles[i+1]||{background:"rgba(255,255,255,0.15)",color:"#fff"}) }}>{i+1}</span>
-                      </td>
-                      <td style={{ padding:"9px 0", fontSize:13, color:"#fff", borderBottom:"1px solid rgba(255,255,255,0.1)" }}>{rep.name}{rep.qualified&&" ✅"}</td>
-                      <td style={{ padding:"9px 0", fontSize:13, color:"#fff", textAlign:"right", borderBottom:"1px solid rgba(255,255,255,0.1)" }}>{rep.kca}/{target}</td>
+          <div key={round.label} style={{ marginBottom: 8 }}>
+            {/* Accordion header — always visible */}
+            <div
+              onClick={() => setOpenRound(isOpen ? -1 : idx)}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "12px 14px",
+                borderRadius: isOpen ? "12px 12px 0 0" : 12,
+                background: isOpen ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.08)",
+                cursor: "pointer",
+                transition: "background 0.15s",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>{round.label}</span>
+                {isLive && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(74,222,128,0.2)", color: "#4ade80", padding: "2px 7px", borderRadius: 20 }}>LIVE</span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, opacity: 0.65 }}>{round.dates}</span>
+                <span style={{ fontSize: 14, opacity: 0.5, transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s", display: "inline-block" }}>⌄</span>
+              </div>
+            </div>
+
+            {/* Accordion body — shown when open */}
+            {isOpen && (
+              <div style={{
+                background: "rgba(255,255,255,0.12)",
+                borderRadius: "0 0 12px 12px",
+                padding: "0 14px 14px",
+                maxHeight: 320,
+                overflowY: "auto",
+              }}>
+                {/* Column headers */}
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      {["#", "Rep", "KCA"].map((h, i) => (
+                        <th key={h} style={{
+                          fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px",
+                          color: "rgba(255,255,255,0.55)", textAlign: i === 2 ? "right" : "left",
+                          padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)",
+                        }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {roundState === "upcoming" ? (
+                      <tr>
+                        <td colSpan={3} style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>
+                          Starts {round.dates.split("–")[0].trim()}
+                        </td>
+                      </tr>
+                    ) : reps.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>
+                          {roundState === "complete" ? "Results pending" : "No data yet"}
+                        </td>
+                      </tr>
+                    ) : (
+                      // Group by role, show all reps
+                      (["Rookie", "Veteran Setter", "Closer"] as const).flatMap(role => {
+                        const roleReps = reps.filter(r => r.role === role).sort((a, b) => b.kca - a.kca);
+                        if (!roleReps.length) return [];
+                        const target = targets?.[role === "Veteran Setter" ? "Veteran" : role] ?? 1;
+                        return [
+                          <tr key={`role-${role}`}>
+                            <td colSpan={3} style={{ padding: "8px 0 4px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", opacity: 0.55 }}>{role}</td>
+                          </tr>,
+                          ...roleReps.map((rep, i) => (
+                            <tr key={rep.name}>
+                              <td style={{ padding: "8px 0", fontSize: 13, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", fontSize: 11, fontWeight: 800, ...(rankStyles[i + 1] || { background: "rgba(255,255,255,0.15)", color: "#fff" }) }}>{i + 1}</span>
+                              </td>
+                              <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{rep.name}{rep.qualified && " ✅"}</td>
+                              <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>{rep.kca}/{target}</td>
+                            </tr>
+                          )),
+                        ];
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         );
       })}
-      {data.updatedAt && <p style={{ fontSize:11, opacity:0.5, marginTop:4 }}>Updated {new Date(data.updatedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</p>}
     </>
   );
 }
