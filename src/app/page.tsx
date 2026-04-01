@@ -738,6 +738,126 @@ const TIER_ICONS: Record<string, string> = {
   "Blood ½ Zip": "🥋",
 };
 
+// Winners per tier derived from BLOOD_CLUB_MEMBERS
+function getBloodClubTierWinners(prize: string) {
+  return BLOOD_CLUB_MEMBERS
+    .filter(m => m.entries.some(e => e.tier === prize))
+    .map(m => ({
+      name: m.name,
+      role: m.role,
+      date: m.entries.find(e => e.tier === prize)!.date,
+    }));
+}
+
+function BloodClubIncentives({ comp }: { comp: Comp }) {
+  const [modalPrize, setModalPrize] = useState<string | null>(null);
+
+  if (!comp.bloodTiers) return null;
+
+  const modalWinners = modalPrize ? getBloodClubTierWinners(modalPrize) : [];
+
+  return (
+    <>
+      <h3>Prize Tiers</h3>
+      <p>Earn each prize in order — every new qualifying Saturday earns the next tier.</p>
+
+      {comp.bloodTiers.map(t => (
+        <div key={t.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
+          <div style={{ marginBottom:8 }}>
+            <div style={{ fontSize:14, fontWeight:700 }}>{t.label}</div>
+            <div style={{ fontSize:12, opacity:0.7, marginTop:2 }}>2 same-day Saturday closes (Rookies: 1)</div>
+          </div>
+          {t.photo && (
+            <div style={{ borderRadius:10, overflow:"hidden", background:"rgba(0,0,0,0.2)", marginBottom:8 }}>
+              <img src={`/${t.photo}`} alt={t.prize} style={{ width:"100%", maxHeight:180, objectFit:"contain", display:"block" }} />
+            </div>
+          )}
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ fontSize:14, fontWeight:700 }}>{t.prize}</div>
+            <button
+              onClick={() => setModalPrize(t.prize)}
+              style={{
+                background:"rgba(255,255,255,0.18)", border:"none",
+                borderRadius:20, padding:"5px 12px",
+                fontSize:12, fontWeight:700, color:"#fff",
+                cursor:"pointer",
+              }}
+            >
+              See Winners
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Modal */}
+      {modalPrize && (
+        <div
+          onClick={() => setModalPrize(null)}
+          style={{
+            position:"fixed", inset:0, zIndex:1000,
+            background:"rgba(0,0,0,0.55)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            padding:"20px",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background:"#fff", borderRadius:20,
+              width:"100%", maxWidth:340,
+              maxHeight:"70vh",
+              display:"flex", flexDirection:"column",
+              boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
+              overflow:"hidden",
+            }}
+          >
+            {/* Header */}
+            <div style={{ padding:"20px 20px 0", flexShrink:0 }}>
+              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:6 }}>
+                <div style={{ fontSize:18, fontWeight:800, color:"#1a1a1a" }}>{modalPrize} Winners</div>
+                <button
+                  onClick={() => setModalPrize(null)}
+                  style={{ background:"rgba(0,0,0,0.07)", border:"none", borderRadius:"50%", width:32, height:32, fontSize:14, cursor:"pointer", color:"#555", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}
+                >✕</button>
+              </div>
+              <div style={{ height:2, background:"#b91c1c", borderRadius:2, marginBottom:16 }} />
+            </div>
+            {/* Body */}
+            <div style={{ overflowY:"auto", padding:"0 20px 20px", flex:1 }}>
+              {modalWinners.length === 0 ? (
+                <p style={{ fontSize:14, color:"#888", textAlign:"center", padding:"12px 0" }}>No winners yet</p>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                  {modalWinners.map((w, i) => (
+                    <div key={w.name} style={{
+                      display:"flex", alignItems:"center", gap:10,
+                      padding:"10px 0",
+                      borderBottom: i < modalWinners.length - 1 ? "1px solid rgba(0,0,0,0.06)" : "none",
+                    }}>
+                      <span style={{
+                        width:24, height:24, borderRadius:"50%", flexShrink:0,
+                        background: i===0 ? "#f5c842" : i===1 ? "#c0c0c0" : i===2 ? "#cd7f32" : "rgba(0,0,0,0.07)",
+                        color: i < 3 ? "#1a1a1a" : "#555",
+                        display:"flex", alignItems:"center", justifyContent:"center",
+                        fontSize:11, fontWeight:800,
+                      }}>{i + 1}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:15, fontWeight:600, color:"#1a1a1a" }}>{w.name}</div>
+                        <div style={{ fontSize:11, color:"#aaa" }}>{w.role}</div>
+                      </div>
+                      <span style={{ fontSize:12, color:"#aaa" }}>{w.date}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function BloodClubStandings() {
   return (
     <>
@@ -806,26 +926,7 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
   // Incentives (includes targets + prize photos)
   if (section === "incentives") {
     if (comp.id === "ignition" && comp.rounds) return <IgnitionIncentives comp={comp} />;
-    if (comp.id === "blood-club" && comp.bloodTiers) return (
-      <>
-        <h3>Prize Tiers</h3>
-        <p>Earn each prize in order — every new qualifying Saturday earns the next tier.</p>
-        {comp.bloodTiers.map(t => (
-          <div key={t.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-            <div style={{ marginBottom:8 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>{t.label}</div>
-              <div style={{ fontSize:12, opacity:0.7, marginTop:2 }}>2 same-day Saturday closes (Rookies: 1)</div>
-            </div>
-            {t.photo && (
-              <div style={{ borderRadius:10, overflow:"hidden", background:"rgba(0,0,0,0.2)", marginBottom:4 }}>
-                <img src={`/${t.photo}`} alt={t.prize} style={{ width:"100%", maxHeight:180, objectFit:"contain", display:"block" }} />
-              </div>
-            )}
-            <div style={{ textAlign:"center", fontSize:14, fontWeight:700, marginTop:6 }}>{t.prize}</div>
-          </div>
-        ))}
-      </>
-    );
+    if (comp.id === "blood-club" && comp.bloodTiers) return <BloodClubIncentives comp={comp} />;
     return <p style={{ opacity:0.8 }}>Incentives coming soon.</p>;
   }
 
