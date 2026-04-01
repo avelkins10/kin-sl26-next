@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+
+// ─── Test mode context ────────────────────────
+const TestModeContext = createContext(false);
+function useTestMode() { return useContext(TestModeContext); }
+const TEST_NOW_DATE = new Date("2026-02-25T12:00:00");
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -33,7 +38,7 @@ interface Comp {
   subtitle: string;
   theme: CompTheme;
   rounds?: Round[];
-  bloodTiers?: { label: string; prize: string }[];
+  bloodTiers?: { label: string; prize: string; photo?: string }[];
 }
 
 type MobileScreen = "home" | "detail" | "content" | "soon";
@@ -195,7 +200,7 @@ const COMPS: Comp[] = [
     group: "yearlong",
     stub: false,
     dates: { start: "2026-01-01", end: "2026-12-31" },
-    subtitle: "2 same-day closes on a Saturday.",
+    subtitle: "KIN's Most Elite Group.",
     theme: {
       accent: "#b91c1c",
       accentSoft: "rgba(185,28,28,0.10)",
@@ -205,9 +210,9 @@ const COMPS: Comp[] = [
       logoAlt: "Blood Club",
     },
     bloodTiers: [
-      { label: "1st Entry", prize: "Blood Polo" },
-      { label: "2nd Entry", prize: "Blood Hat" },
-      { label: "3rd Entry", prize: "Blood ¼ Zip Jacket" },
+      { label: "1st Entry", prize: "Blood Polo",    photo: "blood-club-polo.png" },
+      { label: "2nd Entry", prize: "Blood Hat",     photo: "blood-club-hat.png" },
+      { label: "3rd Entry", prize: "Blood ½ Zip",   photo: "blood-club-qzip.png" },
     ],
   },
 ];
@@ -278,12 +283,14 @@ interface WinnersModalProps {
 function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClose }: WinnersModalProps) {
   const [winners, setWinners]   = useState<string[]>([]);
   const [loading, setLoading]   = useState(true);
-  const now = new Date();
+  const testMode = useTestMode();
+  const now = testMode ? TEST_NOW_DATE : new Date();
   const started = now >= parseLocal(roundStart);
 
   useEffect(() => {
     if (!started) { setLoading(false); return; }
-    fetch("/api/ignition/standings")
+    const url = testMode ? "/api/ignition/standings?test=feb22" : "/api/ignition/standings";
+    fetch(url)
       .then(r => r.json())
       .then((d: IgnitionData) => {
         const qualified = (d.reps || [])
@@ -294,7 +301,7 @@ function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClos
       })
       .catch(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role, roundStart]);
+  }, [role, roundStart, testMode]);
 
   return (
     // Backdrop
@@ -380,7 +387,8 @@ function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClos
 
 function IgnitionIncentives({ comp }: { comp: Comp }) {
   const [modal, setModal] = useState<{ roundIdx: number; role: WinnerRole } | null>(null);
-  const now = new Date();
+  const testMode = useTestMode();
+  const now = testMode ? TEST_NOW_DATE : new Date();
 
   if (!comp.rounds) return null;
 
@@ -534,20 +542,22 @@ function getRoundState(roundIdx: number, now: Date): "upcoming" | "live" | "comp
 }
 
 function IgnitionStandingsContent() {
-  const now = new Date();
+  const testMode = useTestMode();
+  const now = testMode ? TEST_NOW_DATE : new Date();
   const [data, setData] = useState<IgnitionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [openRound, setOpenRound] = useState<number>(() => getDefaultOpenRound(now));
 
   useEffect(() => {
-    if (now < new Date("2026-04-06")) {
+    if (!testMode && now < new Date("2026-04-06")) {
       setData({ status: "not_started" }); setLoading(false); return;
     }
-    fetch("/api/ignition/standings")
+    const url = testMode ? "/api/ignition/standings?test=feb22" : "/api/ignition/standings";
+    fetch(url)
       .then(r => r.json()).then((d: IgnitionData) => { setData(d); setLoading(false); })
       .catch(() => { setData({ status: "not_started" }); setLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [testMode]);
 
   const rankStyles: Record<number, React.CSSProperties> = {
     1: { background: "#f5c842", color: "#1a1a1a" },
@@ -671,6 +681,104 @@ function IgnitionStandingsContent() {
   );
 }
 
+// ─────────────────────────────────────────────
+// BLOOD CLUB STANDINGS (hardcoded)
+// ─────────────────────────────────────────────
+
+const BLOOD_CLUB_MEMBERS = [
+  {
+    name: "Cameron Bott",
+    role: "Rookie",
+    entries: [
+      { tier: "Blood Polo",   date: "Jan 3" },
+      { tier: "Blood Hat",    date: "Feb 14" },
+      { tier: "Blood ½ Zip",  date: "Feb 23" },
+    ],
+  },
+  {
+    name: "Chris Eckman",
+    role: "Veteran",
+    entries: [
+      { tier: "Blood Polo", date: "Jan 31" },
+    ],
+  },
+  {
+    name: "Blake Pippenger",
+    role: "Rookie",
+    entries: [
+      { tier: "Blood Polo", date: "Jan 31" },
+    ],
+  },
+  {
+    name: "Jakob Worley",
+    role: "Rookie",
+    entries: [
+      { tier: "Blood Polo", date: "Feb 28" },
+    ],
+  },
+  {
+    name: "Lorenzo Wooley",
+    role: "Rookie",
+    entries: [
+      { tier: "Blood Polo", date: "Mar 14" },
+    ],
+  },
+  {
+    name: "Nick Thornton",
+    role: "Rookie",
+    entries: [
+      { tier: "Blood Polo", date: "Mar 14" },
+    ],
+  },
+];
+
+const TIER_ICONS: Record<string, string> = {
+  "Blood Polo":  "👕",
+  "Blood Hat":   "🧢",
+  "Blood ½ Zip": "🥋",
+};
+
+function BloodClubStandings() {
+  return (
+    <>
+      <h3>Blood Club Members — 2026</h3>
+      <p>These reps earned membership by closing 2 deals on the same Saturday.</p>
+      {BLOOD_CLUB_MEMBERS.map((member, i) => (
+        <div key={member.name} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
+          {/* Member header */}
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+            <span style={{
+              display:"inline-flex", alignItems:"center", justifyContent:"center",
+              width:26, height:26, borderRadius:"50%", flexShrink:0,
+              fontSize:12, fontWeight:800,
+              background: i===0 ? "#f5c842" : i===1 ? "#c0c0c0" : i===2 ? "#cd7f32" : "rgba(255,255,255,0.15)",
+              color: i < 3 ? "#1a1a1a" : "#fff",
+            }}>{i + 1}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:15, fontWeight:700 }}>{member.name}</div>
+              <div style={{ fontSize:11, opacity:0.6, marginTop:1 }}>{member.role}</div>
+            </div>
+            {/* Trophy count */}
+            <div style={{ fontSize:12, opacity:0.7 }}>
+              {"🩸".repeat(member.entries.length)}
+            </div>
+          </div>
+          {/* Tier entries */}
+          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+            {member.entries.map(entry => (
+              <div key={entry.tier} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", fontSize:12 }}>
+                <span>{TIER_ICONS[entry.tier] ?? "🩸"} {entry.tier}</span>
+                <span style={{ opacity:0.55 }}>{entry.date}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <p style={{ fontSize:11, opacity:0.45, marginTop:8 }}>Updated manually — contact leadership to report a qualifying Saturday.</p>
+    </>
+  );
+}
+
 function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) {
   // Rules
   if (section === "rules") {
@@ -687,10 +795,9 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
     );
     if (comp.id === "blood-club") return (
       <>
-        <h3>How Blood Club Works</h3>
-        <p>The ultimate closer challenge — running all year. Close <strong>2 deals on the same Saturday</strong> to earn membership.</p>
-        <ul><li>Both closes must share the same sale date in QuickBase</li><li>That date must fall on a Saturday</li><li>Both deals must reach KCA status</li><li>Achievement is permanent — once you&apos;re in, you&apos;re in</li></ul>
-        <p>Rookies only need 1 same-day Saturday close to qualify.</p>
+        <h3>KIN&apos;s Most Elite Group</h3>
+        <p>To earn Blood Club status requires two same-day closes (set and closed on the same date) on a Saturday. Rookies need one same-day close.</p>
+        <p>Both deals must reach KCA status. Achievement is permanent — once you&apos;re in, you&apos;re in all year.</p>
       </>
     );
     return <p style={{ opacity: 0.8 }}>Rules coming soon.</p>;
@@ -701,12 +808,20 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
     if (comp.id === "ignition" && comp.rounds) return <IgnitionIncentives comp={comp} />;
     if (comp.id === "blood-club" && comp.bloodTiers) return (
       <>
-        <h3>Blood Club Rewards</h3>
-        <p>Permanent status + exclusive member-only incentives all year.</p>
-        {comp.bloodTiers.map(t=>(
+        <h3>Prize Tiers</h3>
+        <p>Earn each prize in order — every new qualifying Saturday earns the next tier.</p>
+        {comp.bloodTiers.map(t => (
           <div key={t.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-            <div style={{ fontSize:11, opacity:0.7, textTransform:"uppercase", letterSpacing:"1px", marginBottom:4 }}>{t.label}</div>
-            <div style={{ fontSize:16, fontWeight:800 }}>{t.prize}</div>
+            <div style={{ marginBottom:8 }}>
+              <div style={{ fontSize:14, fontWeight:700 }}>{t.label}</div>
+              <div style={{ fontSize:12, opacity:0.7, marginTop:2 }}>2 same-day Saturday closes (Rookies: 1)</div>
+            </div>
+            {t.photo && (
+              <div style={{ borderRadius:10, overflow:"hidden", background:"rgba(0,0,0,0.2)", marginBottom:4 }}>
+                <img src={`/${t.photo}`} alt={t.prize} style={{ width:"100%", maxHeight:180, objectFit:"contain", display:"block" }} />
+              </div>
+            )}
+            <div style={{ textAlign:"center", fontSize:14, fontWeight:700, marginTop:6 }}>{t.prize}</div>
           </div>
         ))}
       </>
@@ -717,16 +832,7 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
   // Standings
   if (section === "standings") {
     if (comp.id === "ignition") return <IgnitionStandingsContent />;
-    if (comp.id === "blood-club") return (
-      <>
-        <h3>Blood Club Members — 2026</h3>
-        <p>Closers who earned membership by closing 2 deals on a Saturday.</p>
-        <table style={{ width:"100%", borderCollapse:"collapse" }}>
-          <thead><tr>{["#","Closer","Date","Entries"].map((h,i)=><th key={h} style={{ fontSize:10, textTransform:"uppercase", letterSpacing:"0.8px", color:"rgba(255,255,255,0.55)", textAlign:i===3?"right":"left", paddingBottom:8, borderBottom:"1px solid rgba(255,255,255,0.15)" }}>{h}</th>)}</tr></thead>
-          <tbody><tr><td colSpan={4} style={{ textAlign:"center", padding:"24px 0", opacity:0.5, fontSize:13 }}>No members yet — be the first 🩸</td></tr></tbody>
-        </table>
-      </>
-    );
+    if (comp.id === "blood-club") return <BloodClubStandings />;
     return <p style={{ opacity:0.8 }}>Standings coming soon.</p>;
   }
 
@@ -1096,18 +1202,21 @@ function MobileLayout({ now }: { now: Date }) {
 // ─────────────────────────────────────────────
 
 export default function Page() {
-  const [now] = useState(() => new Date());
+  const [testMode, setTestMode] = useState(false);
+  const now = testMode ? TEST_NOW_DATE : new Date();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("test") === "feb22") setTestMode(true);
+  }, []);
 
   return (
-    <>
+    <TestModeContext.Provider value={testMode}>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-
-        /* Desktop layout: ≥768px */
         #layout-desktop { display: none; }
         #layout-mobile  { display: flex; }
-
         @media (min-width: 768px) {
           #layout-desktop { display: block; }
           #layout-mobile  { display: none; }
@@ -1115,41 +1224,47 @@ export default function Page() {
           ::-webkit-scrollbar { width: 4px; }
           ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 99px; }
         }
-
-        /* Mobile: phone-shell styles */
         @media (max-width: 767px) {
           body { background: #e8e8e0; min-height: 100dvh; align-items: flex-start; justify-content: center; }
           ::-webkit-scrollbar { width: 3px; }
           ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
         }
-
-        /* Phone shell on mid-size (480–767px) */
         @media (min-width: 480px) and (max-width: 767px) {
           body { padding: 32px 16px; align-items: center; }
           #mobile-shell {
-            min-height: 820px !important;
-            max-height: 820px !important;
+            min-height: 820px !important; max-height: 820px !important;
             border-radius: 44px !important;
             box-shadow: 0 24px 80px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.12) !important;
             overflow: hidden !important;
           }
         }
-
         ::-webkit-scrollbar-track { background: transparent; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
 
-      {/* Desktop — always mounted, CSS-toggled */}
-      <div id="layout-desktop">
-        <DesktopLayout now={now} />
-      </div>
+      {testMode && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
+          background: "#fbbf24", color: "#1a1a1a",
+          textAlign: "center", fontSize: 12, fontWeight: 700,
+          padding: "6px 12px", letterSpacing: "0.3px",
+        }}>
+          ⚠️ TEST MODE — Feb 22–28 data &nbsp;·&nbsp; today = Feb 25, 2026
+        </div>
+      )}
 
-      {/* Mobile — always mounted, CSS-toggled */}
-      <div id="layout-mobile" style={{ width:"100%", justifyContent:"center" }}>
-        <div id="mobile-shell" style={{ width:"100%", maxWidth:390, minHeight:"100dvh", display:"flex", flexDirection:"column" }}>
-          <MobileLayout now={now} />
+      <div style={testMode ? { paddingTop: 30 } : undefined}>
+        {/* Desktop — always mounted, CSS-toggled */}
+        <div id="layout-desktop">
+          <DesktopLayout now={now} />
+        </div>
+        {/* Mobile — always mounted, CSS-toggled */}
+        <div id="layout-mobile" style={{ width:"100%", justifyContent:"center" }}>
+          <div id="mobile-shell" style={{ width:"100%", maxWidth:390, minHeight:"100dvh", display:"flex", flexDirection:"column" }}>
+            <MobileLayout now={now} />
+          </div>
         </div>
       </div>
-    </>
+    </TestModeContext.Provider>
   );
 }

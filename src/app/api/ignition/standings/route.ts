@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const QB_TOKEN = process.env.QUICKBASE_TOKEN!;
 const QB_REALM = process.env.QB_REALM || "kin.quickbase.com";
@@ -38,6 +38,16 @@ const ROUNDS: RoundDef[] = [
   { round: 4, label: "Round 4", start: "2026-04-27", end: "2026-05-03", targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
 ];
 
+// ─── Test mode override ───────────────────────
+const TEST_ROUND: RoundDef = {
+  round: 1,
+  label: "Round 1",
+  start: "2026-02-22",
+  end:   "2026-02-28",
+  targets: { Rookie: 1, Veteran: 3, Closer: 5 },
+};
+const TEST_NOW = new Date("2026-02-25T12:00:00");
+
 const IGNITION_START = new Date("2026-04-06");
 const IGNITION_END   = new Date("2026-05-03T23:59:59");
 
@@ -71,7 +81,7 @@ async function qbQuery(where: string, select: number[]): Promise<QBRecord[]> {
     method: "POST",
     headers: QB_HEADERS,
     body: JSON.stringify(body),
-    next: { revalidate: 900 },
+    next: { revalidate: 0 }, // no cache in test mode; live mode can cache
   });
   if (!resp.ok) {
     const text = await resp.text();
@@ -109,24 +119,22 @@ async function fetchRookieIds(): Promise<Set<string>> {
 
 // ─── Route handler ────────────────────────────
 
-export async function GET() {
-  const now = new Date();
+export async function GET(req: NextRequest) {
+  const testMode = req.nextUrl.searchParams.get("test") === "feb22";
+  const now = testMode ? TEST_NOW : new Date();
 
-  if (now < IGNITION_START) {
-    return NextResponse.json({ status: "not_started" });
-  }
-  if (now > IGNITION_END) {
-    return NextResponse.json({ status: "ended" });
-  }
-
-  const currentRound = getCurrentRound(now);
-  if (!currentRound) {
-    // Between rounds shouldn't happen given windows, but safety fallback
-    return NextResponse.json({ status: "not_started" });
+  // Determine round
+  let currentRound: RoundDef | null;
+  if (testMode) {
+    currentRound = TEST_ROUND;
+  } else {
+    if (now < IGNITION_START) return NextResponse.json({ status: "not_started" });
+    if (now > IGNITION_END)   return NextResponse.json({ status: "ended" });
+    currentRound = getCurrentRound(now);
+    if (!currentRound) return NextResponse.json({ status: "not_started" });
   }
 
   try {
-    // Parallel fetch QB + RepCard
     const [rookieIds, records] = await Promise.all([
       fetchRookieIds(),
       qbQuery(
@@ -135,7 +143,6 @@ export async function GET() {
       ),
     ]);
 
-    // Aggregate per rep
     type Role = "Rookie" | "Veteran Setter" | "Closer";
     const repMap = new Map<string, { name: string; role: Role; kca: number; kw: number }>();
 
@@ -151,7 +158,6 @@ export async function GET() {
       let key: string;
 
       if (closerRcId) {
-        // Closer (or both populated — closer wins)
         name = closerName || closerRcId;
         role = "Closer";
         key  = `closer:${closerRcId}`;
@@ -160,7 +166,7 @@ export async function GET() {
         role = rookieIds.has(setterRcId) ? "Rookie" : "Veteran Setter";
         key  = `setter:${setterRcId}`;
       } else {
-        continue; // no RC ID — skip
+        continue;
       }
 
       const existing = repMap.get(key);
@@ -174,7 +180,7 @@ export async function GET() {
 
     const reps = Array.from(repMap.values()).map((rep) => {
       const targetKey = rep.role === "Veteran Setter" ? "Veteran" : rep.role;
-      const target = currentRound.targets[targetKey as keyof typeof currentRound.targets];
+      const target = currentRound!.targets[targetKey as keyof typeof currentRound.targets];
       return {
         name: rep.name,
         role: rep.role,
@@ -191,6 +197,7 @@ export async function GET() {
       endDate:    currentRound.end,
       targets:    currentRound.targets,
       updatedAt:  now.toISOString(),
+      testMode:   testMode || undefined,
       reps,
     });
   } catch (err) {
