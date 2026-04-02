@@ -389,6 +389,7 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
   const [modal, setModal] = useState<{ roundIdx: number; role: WinnerRole } | null>(null);
   const testMode = useTestMode();
   const now = testMode ? TEST_NOW_DATE : new Date();
+  const rounds = useIgnitionRounds();
 
   if (!comp.rounds) return null;
 
@@ -398,16 +399,16 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
       <p>Earn every round independently — each week resets. Hit the target, win the prize.</p>
       {comp.rounds.map((r, roundIdx) => {
         const photo = IGNITION_PRIZE_PHOTOS[r.label];
-        const roundDef = IGNITION_ROUNDS[roundIdx];
-        const roundState = roundDef ? getRoundState(roundIdx, now) : "upcoming";
+        const roundDef = rounds[roundIdx];
+        const roundState = roundDef ? getRoundState(roundIdx, rounds, now) : "upcoming";
         const hasWinnersIndicator = roundState !== "upcoming";
 
         return (
           <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-            {/* Round header */}
+            {/* Round header — use test round dates if in test mode */}
             <div style={{ marginBottom:10 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
-              <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
+              <div style={{ fontSize:12, opacity:0.7 }}>{roundDef?.dates ?? r.dates}</div>
             </div>
             {/* Target chips — tappable */}
             {r.targets && (
@@ -458,8 +459,8 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
       {modal !== null && (
         <WinnersModal
           roundLabel={comp.rounds[modal.roundIdx].label}
-          roundDates={comp.rounds[modal.roundIdx].dates}
-          roundStart={IGNITION_ROUNDS[modal.roundIdx]?.start ?? "2026-04-06"}
+          roundDates={rounds[modal.roundIdx]?.dates ?? comp.rounds[modal.roundIdx].dates}
+          roundStart={rounds[modal.roundIdx]?.start ?? "2026-04-06"}
           role={modal.role}
           accent={comp.theme.accent}
           onClose={() => setModal(null)}
@@ -519,22 +520,36 @@ const IGNITION_ROUNDS = [
   { label: "Round 4", dates: "Apr 27–May 3", start: "2026-04-27", end: "2026-05-03" },
 ];
 
-function getDefaultOpenRound(now: Date): number {
+// Test mode: round schedule shifted to match Feb 22–28 window
+// "today" = Feb 25 → Round 1 is live
+const TEST_IGNITION_ROUNDS = [
+  { label: "Round 1", dates: "Feb 22–28",  start: "2026-02-22", end: "2026-02-28" },
+  { label: "Round 2", dates: "Mar 1–7",    start: "2026-03-01", end: "2026-03-07" },
+  { label: "Round 3", dates: "Mar 8–14",   start: "2026-03-08", end: "2026-03-14" },
+  { label: "Round 4", dates: "Mar 15–21",  start: "2026-03-15", end: "2026-03-21" },
+];
+
+function useIgnitionRounds() {
+  const testMode = useTestMode();
+  return testMode ? TEST_IGNITION_ROUNDS : IGNITION_ROUNDS;
+}
+
+function getDefaultOpenRound(rounds: typeof IGNITION_ROUNDS, now: Date): number {
   // Return 0-based index of the active or closest upcoming round
-  for (let i = 0; i < IGNITION_ROUNDS.length; i++) {
-    const r = IGNITION_ROUNDS[i];
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
     const s = parseLocal(r.start), e = parseLocal(r.end);
     if (now >= s && now <= e) return i; // currently live
   }
   // Before Ignition starts or between rounds — open first upcoming
-  for (let i = 0; i < IGNITION_ROUNDS.length; i++) {
-    if (now < parseLocal(IGNITION_ROUNDS[i].start)) return i;
+  for (let i = 0; i < rounds.length; i++) {
+    if (now < parseLocal(rounds[i].start)) return i;
   }
-  return IGNITION_ROUNDS.length - 1; // all done, show last
+  return rounds.length - 1; // all done, show last
 }
 
-function getRoundState(roundIdx: number, now: Date): "upcoming" | "live" | "complete" {
-  const r = IGNITION_ROUNDS[roundIdx];
+function getRoundState(roundIdx: number, rounds: typeof IGNITION_ROUNDS, now: Date): "upcoming" | "live" | "complete" {
+  const r = rounds[roundIdx];
   const s = parseLocal(r.start), e = parseLocal(r.end);
   if (now > e) return "complete";
   if (now >= s) return "live";
@@ -544,9 +559,10 @@ function getRoundState(roundIdx: number, now: Date): "upcoming" | "live" | "comp
 function IgnitionStandingsContent() {
   const testMode = useTestMode();
   const now = testMode ? TEST_NOW_DATE : new Date();
+  const rounds = useIgnitionRounds();
   const [data, setData] = useState<IgnitionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [openRound, setOpenRound] = useState<number>(() => getDefaultOpenRound(now));
+  const [openRound, setOpenRound] = useState<number>(() => getDefaultOpenRound(rounds, now));
 
   useEffect(() => {
     if (!testMode && now < new Date("2026-04-06")) {
@@ -576,9 +592,9 @@ function IgnitionStandingsContent() {
           <span style={{ marginLeft: 6, display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#4ade80", verticalAlign: "middle", animation: "pulse 2s infinite" }} />
         </p>
       )}
-      {IGNITION_ROUNDS.map((round, idx) => {
+      {rounds.map((round, idx) => {
         const isOpen = openRound === idx;
-        const roundState = getRoundState(idx, now);
+        const roundState = getRoundState(idx, rounds, now);
         const isLive = roundState === "live";
 
         // Get reps for this round from API data (only meaningful when live/complete)
