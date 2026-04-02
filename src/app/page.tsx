@@ -405,10 +405,10 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
 
         return (
           <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
-            {/* Round header — use test round dates if in test mode */}
+            {/* Round header */}
             <div style={{ marginBottom:10 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
-              <div style={{ fontSize:12, opacity:0.7 }}>{roundDef?.dates ?? r.dates}</div>
+              <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
             </div>
             {/* Target chips — tappable */}
             {r.targets && (
@@ -459,8 +459,8 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
       {modal !== null && (
         <WinnersModal
           roundLabel={comp.rounds[modal.roundIdx].label}
-          roundDates={rounds[modal.roundIdx]?.dates ?? comp.rounds[modal.roundIdx].dates}
-          roundStart={rounds[modal.roundIdx]?.start ?? "2026-04-06"}
+          roundDates={comp.rounds[modal.roundIdx].dates}
+          roundStart={IGNITION_ROUNDS[modal.roundIdx]?.start ?? "2026-04-06"}
           role={modal.role}
           accent={comp.theme.accent}
           onClose={() => setModal(null)}
@@ -520,18 +520,12 @@ const IGNITION_ROUNDS = [
   { label: "Round 4", dates: "Apr 27–May 3", start: "2026-04-27", end: "2026-05-03" },
 ];
 
-// Test mode: round schedule shifted to match Feb 22–28 window
-// "today" = Feb 25 → Round 1 is live
-const TEST_IGNITION_ROUNDS = [
-  { label: "Round 1", dates: "Feb 22–28",  start: "2026-02-22", end: "2026-02-28" },
-  { label: "Round 2", dates: "Mar 1–7",    start: "2026-03-01", end: "2026-03-07" },
-  { label: "Round 3", dates: "Mar 8–14",   start: "2026-03-08", end: "2026-03-14" },
-  { label: "Round 4", dates: "Mar 15–21",  start: "2026-03-15", end: "2026-03-21" },
-];
+// Test round — prepended to accordion in test mode only
+const TEST_ROUND_ENTRY = { label: "Test Round", dates: "Feb 22–28", start: "2026-02-22", end: "2026-02-28" };
 
 function useIgnitionRounds() {
   const testMode = useTestMode();
-  return testMode ? TEST_IGNITION_ROUNDS : IGNITION_ROUNDS;
+  return testMode ? [TEST_ROUND_ENTRY, ...IGNITION_ROUNDS] : IGNITION_ROUNDS;
 }
 
 function getDefaultOpenRound(rounds: typeof IGNITION_ROUNDS, now: Date): number {
@@ -596,9 +590,12 @@ function IgnitionStandingsContent() {
         const isOpen = openRound === idx;
         const roundState = getRoundState(idx, rounds, now);
         const isLive = roundState === "live";
+        const isTestRound = round.label === "Test Round";
 
-        // Get reps for this round from API data (only meaningful when live/complete)
-        const liveRoundMatch = data?.round === idx + 1;
+        // Test round is always idx 0 in test mode; API returns round:1 for the active window
+        // Real rounds: idx 0→round 1, 1→round 2, etc. (no test round in production)
+        const apiRoundNum = isTestRound ? 1 : (idx + (rounds[0].label === "Test Round" ? 0 : 1));
+        const liveRoundMatch = data?.round === apiRoundNum;
         const reps = (liveRoundMatch && data?.reps) ? data.reps : [];
         const targets = data?.targets;
 
@@ -621,6 +618,9 @@ function IgnitionStandingsContent() {
                 <span style={{ fontSize: 14, fontWeight: 700 }}>{round.label}</span>
                 {isLive && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(74,222,128,0.2)", color: "#4ade80", padding: "2px 7px", borderRadius: 20 }}>LIVE</span>
+                )}
+                {isTestRound && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(251,191,36,0.25)", color: "#fbbf24", padding: "2px 7px", borderRadius: 20 }}>⚠️ TEST</span>
                 )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
