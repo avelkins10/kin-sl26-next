@@ -1138,7 +1138,7 @@ function DesktopLayout({ now }: { now: Date }) {
 
       {/* Footer */}
       <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"12px 0 16px" }}>
-        kinsight<sup style={{ fontSize:8, verticalAlign:"super" }}>™</sup>
+        Powered by KINsight™
       </div>
     </div>
   );
@@ -1224,7 +1224,7 @@ function MobileLayout({ now }: { now: Date }) {
                 );
               })}
             </div>
-            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>kinsight<sup style={{ fontSize:8, verticalAlign:"super" }}>™</sup></div>
+            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>Powered by KINsight™</div>
           </div>
         )}
 
@@ -1252,7 +1252,7 @@ function MobileLayout({ now }: { now: Date }) {
                 </button>
               ))}
             </div>
-            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>kinsight<sup style={{ fontSize:8, verticalAlign:"super" }}>™</sup></div>
+            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>Powered by KINsight™</div>
           </div>
         )}
 
@@ -1283,7 +1283,7 @@ function MobileLayout({ now }: { now: Date }) {
               `}</style>
               <div className="mobile-content"><SectionContent comp={activeComp} section={activeSection} /></div>
             </div>
-            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>kinsight<sup style={{ fontSize:8, verticalAlign:"super" }}>™</sup></div>
+            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>Powered by KINsight™</div>
           </div>
         )}
 
