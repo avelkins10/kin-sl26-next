@@ -602,13 +602,9 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr>
-          {["Rep", "KCA"].map((h, i) => (
-            <th key={h} style={{
-              fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px",
-              color: "rgba(255,255,255,0.55)", textAlign: i === 1 ? "right" : "left",
-              padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)",
-            }}>{h}</th>
-          ))}
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>Rep</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>KCA</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>kW</th>
         </tr>
       </thead>
       <tbody>
@@ -619,6 +615,9 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
             </td>
             <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {rep.kca}
+            </td>
+            <td style={{ padding: "8px 0", fontSize: 13, color: "rgba(255,255,255,0.7)", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              {rep.kw.toFixed(1)}
             </td>
           </tr>
         ))}
