@@ -1239,7 +1239,7 @@ function MobileLayout({ now }: { now: Date }) {
       `}</style>
 
       <div style={{
-        width:"100%", maxWidth:390, minHeight:"100dvh",
+        width:"100%", maxWidth:390, height:"100dvh",
         background:"#F5F5F0",
         display:"flex", flexDirection:"column",
         position:"relative", overflow:"hidden",
@@ -1434,7 +1434,7 @@ export default function Page() {
         </div>
         {/* Mobile — always mounted, CSS-toggled */}
         <div id="layout-mobile" style={{ width:"100%", justifyContent:"center" }}>
-          <div id="mobile-shell" style={{ width:"100%", maxWidth:390, minHeight:"100dvh", display:"flex", flexDirection:"column" }}>
+          <div id="mobile-shell" style={{ width:"100%", maxWidth:390, height:"100dvh", overflow:"hidden", display:"flex", flexDirection:"column" }}>
             <MobileLayout now={now} />
           </div>
         </div>
