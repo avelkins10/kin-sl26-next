@@ -602,9 +602,9 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>Rep</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>KCA</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>kW</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0 }}>Rep</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0 }}>KCA</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0 }}>kW</th>
         </tr>
       </thead>
       <tbody>
