@@ -121,20 +121,30 @@ interface RCUser {
 }
 
 async function fetchRookieIds(): Promise<Set<string>> {
-  const resp = await fetch("https://app.repcard.com/api/users?limit=500", {
-    headers: { "X-API-Key": RC_KEY },
-    next: { revalidate: 900 },
-  });
-  if (!resp.ok) throw new Error(`RepCard failed ${resp.status}`);
-  const data = await resp.json();
-  const users: RCUser[] = Array.isArray(data) ? data : (data?.result?.data ?? data?.result ?? data?.data ?? []);
-
   const rookieIds = new Set<string>();
-  for (const u of users) {
-    if (u.status === "ACTIVE" && u.firstName?.startsWith("R - ")) {
-      rookieIds.add(String(u.id));
+  let page = 1;
+  let totalPages = 1;
+
+  while (page <= totalPages) {
+    const resp = await fetch(`https://app.repcard.com/api/users?limit=100&page=${page}`, {
+      headers: { "X-API-Key": RC_KEY },
+      next: { revalidate: 900 },
+    });
+    if (!resp.ok) throw new Error(`RepCard failed ${resp.status}`);
+    const data = await resp.json();
+
+    const result = data?.result ?? data;
+    const users: RCUser[] = Array.isArray(result) ? result : (result?.data ?? []);
+    totalPages = result?.totalPages ?? 1;
+
+    for (const u of users) {
+      if (u.status === "ACTIVE" && u.firstName?.startsWith("R - ")) {
+        rookieIds.add(String(u.id));
+      }
     }
+    page++;
   }
+
   return rookieIds;
 }
 
