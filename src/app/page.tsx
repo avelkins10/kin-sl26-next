@@ -602,9 +602,9 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
     <table style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>Rep</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>KCA</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>kW</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>Rep</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>KCA</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", borderBottom: "1px solid rgba(255,255,255,0.15)", position: "sticky", top: 0, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}>kW</th>
         </tr>
       </thead>
       <tbody>
@@ -616,7 +616,7 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
             <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {rep.kca}
             </td>
-            <td style={{ padding: "8px 0", fontSize: 13, color: "rgba(255,255,255,0.7)", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {rep.kw.toFixed(1)}
             </td>
           </tr>
