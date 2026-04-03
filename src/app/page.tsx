@@ -287,6 +287,13 @@ function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClos
   const now = testMode ? TEST_NOW_DATE : new Date();
   const started = now >= parseLocal(roundStart);
 
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   useEffect(() => {
     if (!started) { setLoading(false); return; }
     const url = testMode ? "/api/ignition/standings?test=feb22" : "/api/ignition/standings";
@@ -690,36 +697,34 @@ function IgnitionStandingsContent() {
                 borderRadius: "0 0 12px 12px",
                 padding: "12px 14px 14px",
               }}>
-                {roundState === "upcoming" ? (
-                  <p style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>
-                    Starts {round.dates.split("–")[0].trim()}
-                  </p>
-                ) : (
-                  <>
-                    {/* Role filter buttons */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                      {ROLE_TABS.map(tab => (
-                        <button
-                          key={tab.key}
-                          onClick={() => setActiveRole(tab.key)}
-                          style={{
-                            flex: 1, border: "none", borderRadius: 8,
-                            padding: "7px 4px", fontSize: 11, fontWeight: 700,
-                            cursor: "pointer", transition: "all 0.15s",
-                            background: activeRole === tab.key ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.15)",
-                            color: activeRole === tab.key ? "#1a1a1a" : "rgba(255,255,255,0.7)",
-                          }}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Rep list for selected role */}
-                    <div style={{ maxHeight: 260, overflowY: "auto" }}>
-                      <RoleRepList reps={reps.filter(r => r.role === activeRole)} />
-                    </div>
-                  </>
-                )}
+                {/* Role filter buttons — always visible */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+                  {ROLE_TABS.map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveRole(tab.key)}
+                      style={{
+                        flex: 1, border: "none", borderRadius: 8,
+                        padding: "7px 4px", fontSize: 11, fontWeight: 700,
+                        cursor: "pointer", transition: "all 0.15s",
+                        background: activeRole === tab.key ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.15)",
+                        color: activeRole === tab.key ? "#1a1a1a" : "rgba(255,255,255,0.7)",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Rep list or upcoming placeholder */}
+                <div style={{ maxHeight: 260, overflowY: "auto" }}>
+                  {roundState === "upcoming" ? (
+                    <p style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>
+                      Starts {round.dates.split("–")[0].trim()}
+                    </p>
+                  ) : (
+                    <RoleRepList reps={reps.filter(r => r.role === activeRole)} />
+                  )}
+                </div>
               </div>
             )}
           </div>
