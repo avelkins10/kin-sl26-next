@@ -1314,22 +1314,22 @@ function MobileLayout({ now }: { now: Date }) {
 
         {/* CONTENT */}
         {screen === "content" && activeComp && activeSection && (
-          <div style={{ display:"flex", flexDirection:"column", flex:1, overflow:"hidden" }}>
+          <div style={{ display:"flex", flexDirection:"column", flex:1, overflow:"hidden", background:activeComp.theme.accent }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px 0", flexShrink:0 }}>
-              <button className="mobile-btn-nav" onClick={backToDetail} style={{ width:34, height:34, border:"none", background:"rgba(0,0,0,0.07)", borderRadius:"50%", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#444" }}>‹</button>
-              <button className="mobile-btn-nav" onClick={goHome} style={{ width:34, height:34, border:"none", background:"rgba(0,0,0,0.07)", borderRadius:"50%", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#444" }}>✕</button>
+              <button className="mobile-btn-nav" onClick={backToDetail} style={{ width:34, height:34, border:"none", background:"rgba(255,255,255,0.22)", borderRadius:"50%", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#fff" }}>‹</button>
+              <button className="mobile-btn-nav" onClick={goHome} style={{ width:34, height:34, border:"none", background:"rgba(255,255,255,0.22)", borderRadius:"50%", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#fff" }}>✕</button>
             </div>
             <div style={{ padding:"12px 20px 0", display:"flex", flexDirection:"column", alignItems:"center", gap:4, flexShrink:0 }}>
               {activeComp.theme.logo ? (
-                <div style={{ background:activeComp.theme.accentSoft, borderRadius:12, padding:"8px 18px" }}>
-                  <img src={`/${activeComp.theme.logo}`} alt={activeComp.theme.logoAlt||activeComp.name} style={{ maxHeight:36, maxWidth:140, objectFit:"contain", display:"block", mixBlendMode:"multiply" }} />
+                <div style={{ background:"rgba(255,255,255,0.18)", borderRadius:12, padding:"8px 18px" }}>
+                  <img src={`/${activeComp.theme.logo}`} alt={activeComp.theme.logoAlt||activeComp.name} style={{ maxHeight:36, maxWidth:140, objectFit:"contain", display:"block" }} />
                 </div>
               ) : (
                 <div style={{ fontSize:32 }}>{activeComp.emoji}</div>
               )}
-              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.5, color:activeComp.theme.accent }}>{activeSectionMeta?.label}</div>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.5, color:"rgba(255,255,255,0.75)" }}>{activeSectionMeta?.label}</div>
             </div>
-            <div ref={contentCardRef} style={{ flex:1, overflowY:"auto", margin:"12px 16px 0", borderRadius:20, padding:"22px 20px", background:activeComp.theme.accent, color:activeComp.theme.btnTextColor&&activeComp.theme.btnTextColor!=="#fff"?activeComp.theme.btnTextColor:"#fff" }}>
+            <div ref={contentCardRef} style={{ flex:1, overflowY:"auto", margin:0, borderRadius:0, padding:"22px 20px", background:"rgba(0,0,0,0.18)", color:activeComp.theme.btnTextColor&&activeComp.theme.btnTextColor!=="#fff"?activeComp.theme.btnTextColor:"#fff" }}>
               <style>{`
                 .mobile-content h3{font-size:17px;font-weight:800;margin-bottom:12px;color:inherit;}
                 .mobile-content p{font-size:14px;line-height:1.65;opacity:0.92;margin-bottom:10px;color:inherit;}
@@ -1339,7 +1339,7 @@ function MobileLayout({ now }: { now: Date }) {
               `}</style>
               <div className="mobile-content"><SectionContent comp={activeComp} section={activeSection} /></div>
             </div>
-            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"#c8c6c0", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>Powered by KINsight™</div>
+            <div style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.45)", letterSpacing:0.5, padding:"10px 0 18px", flexShrink:0 }}>Powered by KINsight™</div>
           </div>
         )}
 
