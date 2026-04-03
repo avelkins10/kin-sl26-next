@@ -183,11 +183,13 @@ async function buildLiveReps(round: RoundDef, rookieIds: Set<string>): Promise<R
     }
   }
 
-  return Array.from(repMap.values()).map(rep => {
-    const targetKey = rep.role === "Veteran Setter" ? "Veteran" : rep.role;
-    const target = round.targets[targetKey as keyof typeof round.targets];
-    return { name: rep.name, role: rep.role, kca: rep.kca, kw: Math.round(rep.kw * 100) / 100, qualified: rep.kca >= target };
-  });
+  return Array.from(repMap.values())
+    .map(rep => {
+      const targetKey = rep.role === "Veteran Setter" ? "Veteran" : rep.role;
+      const target = round.targets[targetKey as keyof typeof round.targets];
+      return { name: rep.name, role: rep.role, kca: rep.kca, kw: Math.round(rep.kw * 100) / 100, qualified: rep.kca >= target };
+    })
+    .sort((a, b) => b.kca - a.kca || b.kw - a.kw);
 }
 
 // ─── Response types ───────────────────────────

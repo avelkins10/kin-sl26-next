@@ -608,7 +608,7 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
         </tr>
       </thead>
       <tbody>
-        {reps.sort((a, b) => b.kca - a.kca).map((rep) => (
+        {reps.sort((a, b) => b.kca - a.kca || b.kw - a.kw).map((rep) => (
           <tr key={rep.name}>
             <td style={{ padding: "8px 0", fontSize: 13, color: "#fff", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
               {rep.name}{rep.qualified && " ✅"}
