@@ -1399,7 +1399,7 @@ export default function Page() {
           ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 99px; }
         }
         @media (max-width: 767px) {
-          html, body { height: 100dvh; overflow: hidden; background: #e8e8e0; align-items: flex-start; justify-content: center; }
+          html, body { height: 100dvh !important; overflow: hidden !important; background: #e8e8e0; align-items: flex-start; justify-content: center; }
           ::-webkit-scrollbar { width: 3px; }
           ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 99px; }
         }
