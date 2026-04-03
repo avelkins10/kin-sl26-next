@@ -197,10 +197,6 @@ export async function GET(req: NextRequest) {
       const setterName  = val(r, FID.setterName)  ? String(val(r, FID.setterName))  : null;
       const kw          = Number(val(r, FID.systemKw) ?? 0);
 
-      let name: string;
-      let role: Role;
-      let key: string;
-
       // Credit BOTH closer and setter for the same deal — they each earn a KCA.
       const credits: Array<{ key: string; name: string; role: Role }> = [];
 

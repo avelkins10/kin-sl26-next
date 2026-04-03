@@ -385,6 +385,14 @@ function WinnersModal({ roundLabel, roundDates, roundStart, role, accent, onClos
 // IGNITION INCENTIVES (tappable chips + modal)
 // ─────────────────────────────────────────────
 
+// Test round entry for incentives — mirrors TEST_ROUND_ENTRY used in standings
+const TEST_INCENTIVE_ROUND: Round = {
+  label: "Test Round",
+  dates: "Feb 22–28",
+  prize: "Test Prize (QA only)",
+  targets: { Rookie: 1, Veteran: 3, Closer: 5 },
+};
+
 function IgnitionIncentives({ comp }: { comp: Comp }) {
   const [modal, setModal] = useState<{ roundIdx: number; role: WinnerRole } | null>(null);
   const testMode = useTestMode();
@@ -393,26 +401,44 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
 
   if (!comp.rounds) return null;
 
+  // In test mode, prepend the test round card so modals can be validated
+  const incentiveRounds: Round[] = testMode
+    ? [TEST_INCENTIVE_ROUND, ...comp.rounds]
+    : comp.rounds;
+
+  // Map incentive round index → the rounds[] entry used for date lookups
+  // rounds[] = [TestRound, R1, R2, R3, R4] in test mode; [R1, R2, R3, R4] in prod
+  function getRoundStart(incentiveIdx: number): string {
+    const r = rounds[incentiveIdx];
+    return r?.start ?? "2026-04-06";
+  }
+
   return (
     <>
       <h3>Round Prizes</h3>
       <p>Earn every round independently — each week resets. Hit the target, win the prize.</p>
-      {comp.rounds.map((r, roundIdx) => {
-        const photo = IGNITION_PRIZE_PHOTOS[r.label];
+      {incentiveRounds.map((r, roundIdx) => {
+        const isTestRound = r.label === "Test Round";
+        const photo = isTestRound ? null : IGNITION_PRIZE_PHOTOS[r.label];
         const roundDef = rounds[roundIdx];
         const roundState = roundDef ? getRoundState(roundIdx, rounds, now) : "upcoming";
         const hasWinnersIndicator = roundState !== "upcoming";
 
         return (
-          <div key={r.label} style={{ background:"rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10 }}>
+          <div key={r.label} style={{ background: isTestRound ? "rgba(251,191,36,0.18)" : "rgba(255,255,255,0.12)", borderRadius:12, padding:14, marginBottom:10, border: isTestRound ? "1px solid rgba(251,191,36,0.4)" : "none" }}>
             {/* Round header */}
-            <div style={{ marginBottom:10 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
-              <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
+            <div style={{ marginBottom:10, display:"flex", alignItems:"center", gap:8 }}>
+              <div>
+                <div style={{ fontSize:14, fontWeight:700 }}>{r.label}</div>
+                <div style={{ fontSize:12, opacity:0.7 }}>{r.dates}</div>
+              </div>
+              {isTestRound && (
+                <span style={{ fontSize:10, fontWeight:700, background:"rgba(251,191,36,0.3)", color:"#fbbf24", padding:"2px 7px", borderRadius:20, marginLeft:"auto" }}>⚠️ TEST</span>
+              )}
             </div>
             {/* Target chips — tappable */}
             {r.targets && (
-              <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <div style={{ display:"flex", gap:8, marginBottom: isTestRound ? 0 : 12 }}>
                 {(Object.entries(r.targets) as [WinnerRole, number][]).map(([role, n]) => (
                   <button
                     key={role}
@@ -444,7 +470,7 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
                 ))}
               </div>
             )}
-            {/* Prize photo */}
+            {/* Prize photo — real rounds only */}
             {photo && (
               <div style={{ borderRadius:12, overflow:"hidden", background:"rgba(0,0,0,0.2)" }}>
                 <img src={`/${photo}`} alt={r.prize} style={{ width:"100%", maxHeight:200, objectFit:"contain", display:"block" }} />
@@ -455,12 +481,12 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
         );
       })}
 
-      {/* Modal */}
+      {/* Modal — uses same test=feb22 API endpoint as standings */}
       {modal !== null && (
         <WinnersModal
-          roundLabel={comp.rounds[modal.roundIdx].label}
-          roundDates={comp.rounds[modal.roundIdx].dates}
-          roundStart={IGNITION_ROUNDS[modal.roundIdx]?.start ?? "2026-04-06"}
+          roundLabel={incentiveRounds[modal.roundIdx].label}
+          roundDates={incentiveRounds[modal.roundIdx].dates}
+          roundStart={getRoundStart(modal.roundIdx)}
           role={modal.role}
           accent={comp.theme.accent}
           onClose={() => setModal(null)}
