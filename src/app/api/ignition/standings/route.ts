@@ -33,10 +33,10 @@ interface RoundDef {
 }
 
 const ROUNDS: RoundDef[] = [
-  { round: 1, label: "Round 1", start: "2026-04-07", end: "2026-04-13", targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
-  { round: 2, label: "Round 2", start: "2026-04-14", end: "2026-04-20", targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
-  { round: 3, label: "Round 3", start: "2026-04-21", end: "2026-04-27", targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
-  { round: 4, label: "Round 4", start: "2026-04-28", end: "2026-05-04", targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+  { round: 1, label: "Round 1", start: "2026-04-06", end: "2026-04-12", targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+  { round: 2, label: "Round 2", start: "2026-04-13", end: "2026-04-19", targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+  { round: 3, label: "Round 3", start: "2026-04-20", end: "2026-04-26", targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+  { round: 4, label: "Round 4", start: "2026-04-27", end: "2026-05-03", targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
 ];
 
 // ─── Test mode override ───────────────────────
@@ -49,8 +49,8 @@ const TEST_ROUND: RoundDef = {
 };
 const TEST_NOW = new Date("2026-02-25T12:00:00");
 
-const IGNITION_START = new Date("2026-04-07");
-const IGNITION_END   = new Date("2026-05-04T23:59:59");
+const IGNITION_START = new Date("2026-04-06");
+const IGNITION_END   = new Date("2026-05-03T23:59:59");
 
 function getCurrentRound(now: Date): RoundDef | null {
   for (const r of ROUNDS) {

@@ -56,7 +56,7 @@ const COMPS: Comp[] = [
     emoji: "🏁",
     group: "sl26",
     stub: false,
-    dates: { start: "2026-04-07", end: "2026-05-04" },
+    dates: { start: "2026-04-06", end: "2026-05-03" },
     subtitle: "Hit the threshold. Earn the prize.",
     theme: {
       accent: "#2a6ca0",
@@ -67,10 +67,10 @@ const COMPS: Comp[] = [
       logoAlt: "Ignition",
     },
     rounds: [
-      { label: "Round 1", dates: "Apr 7–13",      prize: "Anker 621 MagSafe Battery",  targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
-      { label: "Round 2", dates: "Apr 14–20",     prize: "New Polo",                    targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
-      { label: "Round 3", dates: "Apr 21–27",     prize: "Knocking Hat",                targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
-      { label: "Round 4", dates: "Apr 28–May 4",  prize: "Short Sleeve Rain Jacket",    targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+      { label: "Round 1", dates: "Apr 6–12",     prize: "Anker 621 MagSafe Battery",  targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+      { label: "Round 2", dates: "Apr 13–19",    prize: "New Polo",                    targets: { Rookie: 1, Veteran: 3, Closer: 5 } },
+      { label: "Round 3", dates: "Apr 20–26",    prize: "Knocking Hat",                targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
+      { label: "Round 4", dates: "Apr 27–May 3", prize: "Short Sleeve Rain Jacket",    targets: { Rookie: 2, Veteran: 4, Closer: 6 } },
     ],
   },
   {
@@ -412,7 +412,7 @@ function IgnitionIncentives({ comp }: { comp: Comp }) {
   // rounds[] = [TestRound, R1, R2, R3, R4] in test mode; [R1, R2, R3, R4] in prod
   function getRoundStart(incentiveIdx: number): string {
     const r = rounds[incentiveIdx];
-    return r?.start ?? "2026-04-07";
+    return r?.start ?? "2026-04-06";
   }
 
   return (
@@ -540,13 +540,12 @@ interface IgnitionData {
   reps?: { name: string; role: "Rookie" | "Veteran Setter" | "Closer"; kca: number; kw: number; qualified: boolean }[];
 }
 
-// Ignition round definitions (dates used for accordion state logic)
-// All week-long competitions: Mon start → Sun end
+// Ignition round definitions — Mon start → Sun end (Apr 6 is a Monday)
 const IGNITION_ROUNDS = [
-  { label: "Round 1", dates: "Apr 7–13",      start: "2026-04-07", end: "2026-04-13" },
-  { label: "Round 2", dates: "Apr 14–20",     start: "2026-04-14", end: "2026-04-20" },
-  { label: "Round 3", dates: "Apr 21–27",     start: "2026-04-21", end: "2026-04-27" },
-  { label: "Round 4", dates: "Apr 28–May 4",  start: "2026-04-28", end: "2026-05-04" },
+  { label: "Round 1", dates: "Apr 6–12",     start: "2026-04-06", end: "2026-04-12" },
+  { label: "Round 2", dates: "Apr 13–19",    start: "2026-04-13", end: "2026-04-19" },
+  { label: "Round 3", dates: "Apr 20–26",    start: "2026-04-20", end: "2026-04-26" },
+  { label: "Round 4", dates: "Apr 27–May 3", start: "2026-04-27", end: "2026-05-03" },
 ];
 
 // Test round — prepended to accordion in test mode only
@@ -624,7 +623,7 @@ function IgnitionStandingsContent() {
   const [activeRole, setActiveRole] = useState<StandingsRoleFilter>("Closer");
 
   useEffect(() => {
-    if (!testMode && now < new Date("2026-04-07")) {
+    if (!testMode && now < new Date("2026-04-06")) {
       setData({ status: "not_started" }); setLoading(false); return;
     }
     const url = testMode ? "/api/ignition/standings?test=feb22" : "/api/ignition/standings";
