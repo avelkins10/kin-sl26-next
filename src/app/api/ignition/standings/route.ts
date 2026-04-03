@@ -191,24 +191,25 @@ export async function GET(req: NextRequest) {
       let role: Role;
       let key: string;
 
-      if (closerRcId) {
-        name = closerName || closerRcId;
-        role = "Closer";
-        key  = `closer:${closerRcId}`;
-      } else if (setterRcId) {
-        name = setterName || setterRcId;
-        role = rookieIds.has(setterRcId) ? "Rookie" : "Veteran Setter";
-        key  = `setter:${setterRcId}`;
-      } else {
-        continue;
-      }
+      // Credit BOTH closer and setter for the same deal — they each earn a KCA.
+      const credits: Array<{ key: string; name: string; role: Role }> = [];
 
-      const existing = repMap.get(key);
-      if (existing) {
-        existing.kca += 1;
-        existing.kw  += kw;
-      } else {
-        repMap.set(key, { name, role, kca: 1, kw });
+      if (closerRcId) {
+        credits.push({ key: `closer:${closerRcId}`, name: closerName || closerRcId, role: "Closer" });
+      }
+      if (setterRcId) {
+        credits.push({ key: `setter:${setterRcId}`, name: setterName || setterRcId, role: rookieIds.has(setterRcId) ? "Rookie" : "Veteran Setter" });
+      }
+      if (credits.length === 0) continue;
+
+      for (const { key, name, role } of credits) {
+        const existing = repMap.get(key);
+        if (existing) {
+          existing.kca += 1;
+          existing.kw  += kw;
+        } else {
+          repMap.set(key, { name, role, kca: 1, kw });
+        }
       }
     }
 
