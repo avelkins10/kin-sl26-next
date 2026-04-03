@@ -529,15 +529,29 @@ function CompIcon({ comp, size = 40 }: { comp: Comp; size?: number }) {
 // SHARED: CONTENT RENDERERS
 // ─────────────────────────────────────────────
 
+type RepResult = { name: string; role: "Rookie" | "Veteran Setter" | "Closer"; kca: number; kw: number; qualified: boolean };
+
+interface RoundResponse {
+  round:      number;
+  roundLabel: string;
+  startDate:  string;
+  endDate:    string;
+  targets:    { Rookie: number; Veteran: number; Closer: number };
+  status:     "upcoming" | "live" | "complete";
+  reps?:      RepResult[];
+  frozenAt?:  string;
+  updatedAt?: string;
+}
+
 interface IgnitionData {
   status?: "not_started" | "ended";
+  // Legacy single-round fields (still present for live round, backwards compat)
   round?: number;
   roundLabel?: string;
-  startDate?: string;
-  endDate?: string;
-  targets?: { Rookie: number; Veteran: number; Closer: number };
   updatedAt?: string;
-  reps?: { name: string; role: "Rookie" | "Veteran Setter" | "Closer"; kca: number; kw: number; qualified: boolean }[];
+  reps?: RepResult[];
+  // New: all rounds
+  rounds?: RoundResponse[];
 }
 
 // Ignition round definitions — Mon start → Sun end (Apr 6 is a Monday)
@@ -656,9 +670,12 @@ function IgnitionStandingsContent() {
         const isLive = roundState === "live";
         const isTestRound = round.label === "Test Round";
 
+        // Look up this round's data from the rounds[] array first (new API),
+        // falling back to legacy top-level reps for the live round.
         const apiRoundNum = isTestRound ? 1 : (idx + (rounds[0].label === "Test Round" ? 0 : 1));
-        const liveRoundMatch = data?.round === apiRoundNum;
-        const reps = (liveRoundMatch && data?.reps) ? data.reps : [];
+        const roundData = data?.rounds?.find(r => r.round === apiRoundNum);
+        const reps: RepResult[] = roundData?.reps ?? (isLive && data?.reps ? data.reps : []);
+        const isFrozen = roundData?.status === "complete";
 
         return (
           <div key={round.label} style={{ marginBottom: 8 }}>
@@ -679,6 +696,9 @@ function IgnitionStandingsContent() {
                 <span style={{ fontSize: 14, fontWeight: 700 }}>{round.label}</span>
                 {isLive && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(74,222,128,0.2)", color: "#4ade80", padding: "2px 7px", borderRadius: 20 }}>LIVE</span>
+                )}
+                {isFrozen && !isTestRound && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(148,163,184,0.2)", color: "#94a3b8", padding: "2px 7px", borderRadius: 20 }}>FINAL</span>
                 )}
                 {isTestRound && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "rgba(251,191,36,0.25)", color: "#fbbf24", padding: "2px 7px", borderRadius: 20 }}>⚠️ TEST</span>
