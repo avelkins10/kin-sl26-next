@@ -155,11 +155,12 @@ async function writeSnapshot(snap: DBSnapshot): Promise<void> {
 async function buildLiveReps(round: RoundDef, rookieIds: Set<string>): Promise<RepResult[]> {
   // Count every deal that:
   //   1. Has a Sale Date within the round window
-  //   2. Has a KCA Date populated (i.e. it actually reached KCA status at some point)
-  // Status is irrelevant — Cancelled, On Hold, Pending Cancel all count if they KCA'd.
+  //   2. Has a KCA Date within the round window (deal actually reached KCA during this round)
+  // Status is irrelevant — Cancelled, On Hold, Pending Cancel all count if they KCA'd in-window.
   // Rejected deals with no KCA Date do NOT count.
   const records = await qbQuery(
-    `{${FID.saleDate}.OAF.${round.start}}AND{${FID.saleDate}.OBF.${round.end}}AND{${FID.kcaDate}.GT.}`,
+    `{${FID.saleDate}.OAF.${round.start}}AND{${FID.saleDate}.OBF.${round.end}}` +
+    `AND{${FID.kcaDate}.OAF.${round.start}}AND{${FID.kcaDate}.OBF.${round.end}}`,
     [FID.status, FID.saleDate, FID.kcaDate, FID.closerRcId, FID.setterRcId, FID.setterName, FID.closerName, FID.systemKw]
   );
 
