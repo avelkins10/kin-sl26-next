@@ -1005,7 +1005,14 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
 
   // Standings
   if (section === "standings") {
-    if (comp.id === "ignition") return <IgnitionStandingsContent accent={comp.theme.accent} />;
+    if (comp.id === "ignition") {
+      // Compute opaque header bg = accent color darkened by the card's rgba(0,0,0,0.18) overlay
+      const hex = comp.theme.accent.replace("#","");
+      const r = Math.round(parseInt(hex.substring(0,2),16)*0.82);
+      const g = Math.round(parseInt(hex.substring(2,4),16)*0.82);
+      const b = Math.round(parseInt(hex.substring(4,6),16)*0.82);
+      return <IgnitionStandingsContent accent={`rgb(${r},${g},${b})`} />;
+    }
     if (comp.id === "blood-club") return <BloodClubStandings />;
     return <p style={{ opacity:0.8 }}>Standings coming soon.</p>;
   }
