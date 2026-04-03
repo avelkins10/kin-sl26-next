@@ -594,7 +594,8 @@ function getRoundState(roundIdx: number, rounds: typeof IGNITION_ROUNDS, now: Da
 
 type StandingsRoleFilter = "Rookie" | "Veteran Setter" | "Closer";
 
-function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
+function RoleRepList({ reps, headerBg }: { reps: IgnitionData["reps"]; headerBg?: string }) {
+  const thBg = headerBg || "rgba(0,0,0,0.35)";
   if (!reps || reps.length === 0) return (
     <p style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>No data yet</p>
   );
@@ -602,9 +603,9 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
     <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
       <thead>
         <tr>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", position: "sticky", top: 0, background: "rgba(0,0,0,0.18)", boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>Rep</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", position: "sticky", top: 0, background: "rgba(0,0,0,0.18)", boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>KCA</th>
-          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", position: "sticky", top: 0, background: "rgba(0,0,0,0.18)", boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>kW</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "left",  padding: "10px 0 8px", position: "sticky", top: 0, background: thBg, boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>Rep</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", position: "sticky", top: 0, background: thBg, boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>KCA</th>
+          <th style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.8px", color: "rgba(255,255,255,0.55)", textAlign: "right", padding: "10px 0 8px", position: "sticky", top: 0, background: thBg, boxShadow: "0 1px 0 rgba(255,255,255,0.15)" }}>kW</th>
         </tr>
       </thead>
       <tbody>
@@ -626,7 +627,7 @@ function RoleRepList({ reps }: { reps: IgnitionData["reps"] }) {
   );
 }
 
-function IgnitionStandingsContent() {
+function IgnitionStandingsContent({ accent }: { accent?: string }) {
   const testMode = useTestMode();
   const now = testMode ? TEST_NOW_DATE : new Date();
   const rounds = useIgnitionRounds();
@@ -741,7 +742,7 @@ function IgnitionStandingsContent() {
                       Starts {round.dates.split("–")[0].trim()}
                     </p>
                   ) : (
-                    <RoleRepList reps={reps.filter(r => r.role === activeRole)} />
+                    <RoleRepList reps={reps.filter(r => r.role === activeRole)} headerBg={accent} />
                   )}
                 </div>
               </div>
@@ -1004,7 +1005,7 @@ function SectionContent({ comp, section }: { comp: Comp; section: SectionKey }) 
 
   // Standings
   if (section === "standings") {
-    if (comp.id === "ignition") return <IgnitionStandingsContent />;
+    if (comp.id === "ignition") return <IgnitionStandingsContent accent={comp.theme.accent} />;
     if (comp.id === "blood-club") return <BloodClubStandings />;
     return <p style={{ opacity:0.8 }}>Standings coming soon.</p>;
   }
