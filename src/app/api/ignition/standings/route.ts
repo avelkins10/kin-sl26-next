@@ -153,11 +153,14 @@ async function writeSnapshot(snap: DBSnapshot): Promise<void> {
 
 // ─── Live standings builder ───────────────────
 async function buildLiveReps(round: RoundDef, rookieIds: Set<string>): Promise<RepResult[]> {
-  // Use Sale Date (FID 522) to match Looker Studio — any deal with a sale date in the
-  // window counts regardless of status (Active, On Hold, Rejected, Cancelled, etc.)
+  // Count every deal that:
+  //   1. Has a Sale Date within the round window
+  //   2. Has a KCA Date populated (i.e. it actually reached KCA status at some point)
+  // Status is irrelevant — Cancelled, On Hold, Pending Cancel all count if they KCA'd.
+  // Rejected deals with no KCA Date do NOT count.
   const records = await qbQuery(
-    `{${FID.saleDate}.OAF.${round.start}}AND{${FID.saleDate}.OBF.${round.end}}`,
-    [FID.status, FID.saleDate, FID.closerRcId, FID.setterRcId, FID.setterName, FID.closerName, FID.systemKw]
+    `{${FID.saleDate}.OAF.${round.start}}AND{${FID.saleDate}.OBF.${round.end}}AND{${FID.kcaDate}.GT.}`,
+    [FID.status, FID.saleDate, FID.kcaDate, FID.closerRcId, FID.setterRcId, FID.setterName, FID.closerName, FID.systemKw]
   );
 
   type Role = "Rookie" | "Veteran Setter" | "Closer";
