@@ -595,7 +595,7 @@ function getRoundState(roundIdx: number, rounds: typeof IGNITION_ROUNDS, now: Da
 type StandingsRoleFilter = "Rookie" | "Veteran Setter" | "Closer";
 
 function RoleRepList({ reps, headerBg }: { reps: IgnitionData["reps"]; headerBg?: string }) {
-  const thBg = headerBg || "rgba(0,0,0,0.35)";
+  const thBg = headerBg || "#2a6ca0";
   if (!reps || reps.length === 0) return (
     <p style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>No data yet</p>
   );
