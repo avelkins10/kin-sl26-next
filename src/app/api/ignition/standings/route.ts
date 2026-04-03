@@ -15,6 +15,7 @@ const QB_HEADERS = {
 const FID = {
   status:      255,
   saleDate:    522,
+  kcaDate:     461,  // Intake Completed Date = the date a deal reached KCA status
   closerRcId:  2277,
   setterRcId:  2279,
   setterName:  337,
@@ -59,6 +60,26 @@ function getCurrentRound(now: Date): RoundDef | null {
   }
   return null;
 }
+
+function isRoundComplete(round: RoundDef, now: Date): boolean {
+  return now > new Date(round.end + "T23:59:59");
+}
+
+// ─── Round snapshot cache ─────────────────────
+// Once a round is complete, freeze its standings in memory.
+// Survives for the lifetime of the server process (Vercel function warm instance).
+// On cold start after round end, re-queries once then freezes again.
+type RepResult = { name: string; role: string; kca: number; kw: number; qualified: boolean };
+interface RoundSnapshot {
+  round: number;
+  roundLabel: string;
+  startDate: string;
+  endDate: string;
+  targets: Record<string, number>;
+  frozenAt: string;
+  reps: RepResult[];
+}
+const roundSnapshots = new Map<number, RoundSnapshot>();
 
 // ─── QB helper ───────────────────────────────
 
@@ -134,12 +155,25 @@ export async function GET(req: NextRequest) {
     if (!currentRound) return NextResponse.json({ status: "not_started" });
   }
 
+  // ── Return frozen snapshot for completed rounds ───────────────────────────
+  const roundComplete = !testMode && isRoundComplete(currentRound, now);
+  if (roundComplete) {
+    const snap = roundSnapshots.get(currentRound.round);
+    if (snap) {
+      return NextResponse.json({ ...snap, locked: true });
+    }
+    // No snapshot yet — fall through to query once, then freeze
+  }
+
   try {
+    // Matt's rule: count everything that ever KCA'd during the round window,
+    // regardless of later cancellations. Filter on KCA date (FID 461 = Intake
+    // Completed Date), include KCA, Active, AND Cancelled statuses.
     const [rookieIds, records] = await Promise.all([
       fetchRookieIds(),
       qbQuery(
-        `({${FID.status}.EX.KCA}OR{${FID.status}.EX.Active})AND{${FID.saleDate}.OAF.${currentRound.start}}AND{${FID.saleDate}.OBF.${currentRound.end}}`,
-        [FID.status, FID.saleDate, FID.closerRcId, FID.setterRcId, FID.setterName, FID.closerName, FID.systemKw]
+        `({${FID.status}.EX.KCA}OR{${FID.status}.EX.Active}OR{${FID.status}.CT.cancel})AND{${FID.kcaDate}.OAF.${currentRound.start}}AND{${FID.kcaDate}.OBF.${currentRound.end}}`,
+        [FID.status, FID.saleDate, FID.kcaDate, FID.closerRcId, FID.setterRcId, FID.setterName, FID.closerName, FID.systemKw]
       ),
     ]);
 
@@ -190,6 +224,19 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // ── Freeze completed round into snapshot (first request after round ends) ─
+    if (roundComplete && !roundSnapshots.has(currentRound.round)) {
+      roundSnapshots.set(currentRound.round, {
+        round:      currentRound.round,
+        roundLabel: currentRound.label,
+        startDate:  currentRound.start,
+        endDate:    currentRound.end,
+        targets:    currentRound.targets,
+        frozenAt:   now.toISOString(),
+        reps,
+      });
+    }
+
     return NextResponse.json({
       round:      currentRound.round,
       roundLabel: currentRound.label,
@@ -197,6 +244,7 @@ export async function GET(req: NextRequest) {
       endDate:    currentRound.end,
       targets:    currentRound.targets,
       updatedAt:  now.toISOString(),
+      locked:     roundComplete || undefined,
       testMode:   testMode || undefined,
       reps,
     });
