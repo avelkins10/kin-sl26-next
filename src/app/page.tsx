@@ -1263,7 +1263,7 @@ function MobileLayout({ now }: { now: Date }) {
                       const badge = statusBadge(comp, now);
                       return (
                         <div key={comp.id} className="mobile-prog-row" onClick={() => openComp(comp)}
-                          style={{ display:"flex", alignItems:"center", background:"#fff", borderRadius:16, padding:"14px 16px", marginBottom:8, cursor:"pointer", border:"1.5px solid transparent", boxShadow:"0 1px 4px rgba(0,0,0,0.07)" }}>
+                          style={{ display:"flex", alignItems:"center", background:"#fff", borderRadius:16, padding:"14px 16px", marginBottom:8, cursor:"pointer", border:"1.5px solid transparent", boxShadow:"0 1px 4px rgba(0,0,0,0.07)", touchAction:"pan-y" }}>
                           <CompIcon comp={comp} size={40} />
                           <div style={{ flex:1, marginLeft:12, minWidth:0 }}>
                             <div style={{ fontSize:15, fontWeight:700, color:"#1a1a1a" }}>{comp.name}</div>
@@ -1304,7 +1304,7 @@ function MobileLayout({ now }: { now: Date }) {
             <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column", gap:12, padding:"20px 20px 24px" }}>
               {SECTIONS.map(sec => (
                 <button key={sec.key} className="mobile-section-btn" onClick={() => openSection(sec.key)}
-                  style={{ border:"none", borderRadius:16, padding:"20px 24px", fontSize:17, fontWeight:700, letterSpacing:0.2, cursor:"pointer", textAlign:"center", background:activeComp.theme.accent, color:activeComp.theme.btnTextColor||"#fff", boxShadow:"0 4px 14px rgba(0,0,0,0.14)" }}>
+                  style={{ border:"none", borderRadius:16, padding:"20px 24px", fontSize:17, fontWeight:700, letterSpacing:0.2, cursor:"pointer", textAlign:"center", background:activeComp.theme.accent, color:activeComp.theme.btnTextColor||"#fff", boxShadow:"0 4px 14px rgba(0,0,0,0.14)", touchAction:"pan-y" }}>
                   {sec.label}
                 </button>
               ))}
