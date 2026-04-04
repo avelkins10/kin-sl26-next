@@ -595,7 +595,7 @@ function getRoundState(roundIdx: number, rounds: typeof IGNITION_ROUNDS, now: Da
 type StandingsRoleFilter = "Rookie" | "Veteran Setter" | "Closer";
 
 function RoleRepList({ reps, headerBg }: { reps: IgnitionData["reps"]; headerBg?: string }) {
-  const thBg = headerBg || "#2a6ca0";
+  const thBg = headerBg || "#3d7cae";
   if (!reps || reps.length === 0) return (
     <p style={{ textAlign: "center", padding: "18px 0", opacity: 0.5, fontSize: 13 }}>No data yet</p>
   );
@@ -742,7 +742,7 @@ function IgnitionStandingsContent({ accent }: { accent?: string }) {
                       Starts {round.dates.split("–")[0].trim()}
                     </p>
                   ) : (
-                    <RoleRepList reps={reps.filter(r => r.role === activeRole)} headerBg={accent} />
+                    <RoleRepList reps={reps.filter(r => r.role === activeRole)} />
                   )}
                 </div>
               </div>
