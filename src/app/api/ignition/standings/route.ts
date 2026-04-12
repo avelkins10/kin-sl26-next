@@ -89,10 +89,22 @@ async function qbQuery(where: string, select: number[]): Promise<QBRecord[]> {
 }
 
 // ─── RepCard helper ───────────────────────────
-interface RCUser { id: number; firstName?: string; status?: string }
+interface RCUser { id: number; firstName?: string; jobTitle?: string; status?: string }
 
-async function fetchRookieIds(): Promise<Set<string>> {
-  const rookieIds = new Set<string>();
+type RepCardRole = "Rookie" | "Closer" | "Setter";
+
+/**
+ * Fetch all active RepCard users and return a map of rcId → role.
+ * Role determination (in priority order):
+ *   1. firstName starts with "R - " → Rookie
+ *   2. jobTitle contains "Setter" (case-insensitive) → Setter
+ *   3. Everything else (Energy Consultant, etc.) → Closer
+ *
+ * This ensures reps whose RepCard role is Setter are NEVER credited
+ * as Closers, and vice versa — even if they appear in both QB FID fields.
+ */
+async function fetchRepCardRoles(): Promise<Map<string, RepCardRole>> {
+  const roles = new Map<string, RepCardRole>();
   let page = 1, totalPages = 1;
   while (page <= totalPages) {
     const resp = await fetch(`https://app.repcard.com/api/users?limit=100&page=${page}`, {
@@ -105,13 +117,22 @@ async function fetchRookieIds(): Promise<Set<string>> {
     const users: RCUser[] = Array.isArray(result) ? result : (result?.data ?? []);
     totalPages = result?.totalPages ?? 1;
     for (const u of users) {
-      if (u.status === "ACTIVE" && u.firstName?.startsWith("R - ")) {
-        rookieIds.add(String(u.id));
+      if (u.status !== "ACTIVE") continue;
+      const rcId = String(u.id);
+      const jobTitle = u.jobTitle ?? "";
+      let role: RepCardRole;
+      if (u.firstName?.startsWith("R - ")) {
+        role = "Rookie";
+      } else if (jobTitle.toLowerCase().includes("setter")) {
+        role = "Setter";
+      } else {
+        role = "Closer";
       }
+      roles.set(rcId, role);
     }
     page++;
   }
-  return rookieIds;
+  return roles;
 }
 
 // ─── Supabase helpers ─────────────────────────
@@ -152,7 +173,7 @@ async function writeSnapshot(snap: DBSnapshot): Promise<void> {
 }
 
 // ─── Live standings builder ───────────────────
-async function buildLiveReps(round: RoundDef, rookieIds: Set<string>): Promise<RepResult[]> {
+async function buildLiveReps(round: RoundDef, rcRoles: Map<string, RepCardRole>): Promise<RepResult[]> {
   // Count every deal that:
   //   1. Has a Sale Date within the round window
   //   2. Has a KCA Date within the round window (deal actually reached KCA during this round)
@@ -174,10 +195,30 @@ async function buildLiveReps(round: RoundDef, rookieIds: Set<string>): Promise<R
     const setterName = val(r, FID.setterName) ? String(val(r, FID.setterName)) : null;
     const kw         = Number(val(r, FID.systemKw) ?? 0);
 
-    // Credit BOTH closer and setter — each earns their own KCA
+    // Credit closer and setter — but only in the section matching their RepCard role.
+    // If a rep's RepCard jobTitle is "Setter", they are NEVER credited as a Closer
+    // (even if they appear in FID.closerRcId), and vice versa.
+    // This prevents dual-role entries for self-setting reps.
     const credits: Array<{ key: string; name: string; role: Role }> = [];
-    if (closerRcId) credits.push({ key: `closer:${closerRcId}`, name: closerName || closerRcId, role: "Closer" });
-    if (setterRcId) credits.push({ key: `setter:${setterRcId}`, name: setterName || setterRcId, role: rookieIds.has(setterRcId) ? "Rookie" : "Veteran Setter" });
+
+    if (closerRcId) {
+      const rcRole = rcRoles.get(closerRcId);
+      // Only add as Closer if RepCard says they're a Closer or Rookie (not a Setter)
+      if (rcRole !== "Setter") {
+        const role: Role = rcRole === "Rookie" ? "Rookie" : "Closer";
+        credits.push({ key: `closer:${closerRcId}`, name: closerName || closerRcId, role });
+      }
+    }
+
+    if (setterRcId && setterRcId !== closerRcId) {
+      const rcRole = rcRoles.get(setterRcId);
+      // Only add as Setter/Rookie if RepCard says they're NOT a Closer
+      if (rcRole !== "Closer") {
+        const role: Role = rcRole === "Rookie" ? "Rookie" : "Veteran Setter";
+        credits.push({ key: `setter:${setterRcId}`, name: setterName || setterRcId, role });
+      }
+    }
+
     if (!credits.length) continue;
 
     for (const { key, name, role } of credits) {
@@ -218,8 +259,8 @@ export async function GET(req: NextRequest) {
 
   // Test mode: return single round response (backwards-compat)
   if (testMode) {
-    const rookieIds = await fetchRookieIds();
-    const reps = await buildLiveReps(TEST_ROUND, rookieIds);
+    const rcRoles = await fetchRepCardRoles();
+    const reps = await buildLiveReps(TEST_ROUND, rcRoles);
     const roundResp: RoundResponse = {
       round: TEST_ROUND.round, roundLabel: TEST_ROUND.label,
       startDate: TEST_ROUND.start, endDate: TEST_ROUND.end,
@@ -264,7 +305,7 @@ export async function GET(req: NextRequest) {
 
   // Active competition — build all rounds
   try {
-    const rookieIds = await fetchRookieIds();
+    const rcRoles = await fetchRepCardRoles();
     const currentRound = getCurrentRound(now);
 
     const roundResponses: RoundResponse[] = await Promise.all(
@@ -278,7 +319,7 @@ export async function GET(req: NextRequest) {
           let snap = await readSnapshot(COMPETITION, r.round);
           if (!snap) {
             // First request after lock — build and freeze
-            const reps = await buildLiveReps(r, rookieIds);
+            const reps = await buildLiveReps(r, rcRoles);
             const frozen_at = now.toISOString();
             snap = {
               competition: COMPETITION, round: r.round, round_label: r.label,
@@ -295,7 +336,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (isLive) {
-          const reps = await buildLiveReps(r, rookieIds);
+          const reps = await buildLiveReps(r, rcRoles);
           return {
             round: r.round, roundLabel: r.label, startDate: r.start, endDate: r.end,
             targets: r.targets, status: "live",
