@@ -5,7 +5,7 @@ const QB_REALM = process.env.QB_REALM || "kin.quickbase.com";
 const QB_TABLE = process.env.QB_TABLE || "br9kwm8na";
 const RC_KEY   = process.env.REPCARD_API_KEY!;
 
-const SUPABASE_URL = "https://yijofudhciynjzsmpsqp.supabase.co";
+const SUPABASE_URL = "https://ttkrhudzvcaxpuegntgm.supabase.co";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
 const QB_HEADERS = {
